@@ -5,24 +5,26 @@
 
  **/
 
-import gov.llnl.spark.hdf._
+import org.hdfgroup.spark.hdf5._
 import org.apache.spark.sql.functions._
 
 val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
-/*val df = sqlContext.read.option("extension", "he5").hdf5("/mnt/wrk/hdftest/GSSTF_NCEP.3/", "sparky://files")
+val df = sqlContext.read.option("extension", "he5").hdf5("/mnt/wrk/hdftest/GSSTF_NCEP.3/", "sparky://files")
 df.count()
 
 val df = sqlContext.read.option("extension", "he5").hdf5("/mnt/wrk/hdftest/GSSTF_NCEP.3/", "sparky://datasets")
 df.count()
 
 val df = sqlContext.read.option("extension", "he5").hdf5("/mnt/wrk/hdftest/GSSTF_NCEP.3/", "sparky://attributes")
-df.count()*/
+df.count()
 
-val df = sqlContext.read.hdf5("/Users/Alan/IdeaProjects/sparky/src/test/resources/gov/llnl/spark/hdf/GSSTF_NCEP.h5","/HDFEOS/GRIDS/NCEP/Data Fields/SST")
+/*
+val df = sqlContext.read.hdf5("//GSSTF_NCEP.h5","/HDFEOS/GRIDS/NCEP/Data Fields/SST")
 
 df.filter($"value" > -999).describe("value").show()
 
 println(df.filter($"value" > -999).sort("value").collect().drop(df.filter($"value" > -999).sort("value").collect().length/2).head)
+*/
 
 System.exit(0)
