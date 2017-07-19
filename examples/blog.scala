@@ -1,6 +1,6 @@
 // INSTRUCTIONS TO RUN:
-// time spark-shell -i examples/blogPost.scala --jars target/distribution/scala-2.11/5parky_2.11-0.0.1-ALPHA.jar,lib/sis-jhdf5-batteries_included.jar --packages com.databricks:spark-csv_2.10:1.4.0
-// cat *.csv > output.csv
+// time spark-shell -i examples/blog.scala --jars target/scala-2.11/5parky_2.11-0.0.1-ALPHA.jar,lib/sis-jhdf5-batteries_included.jar --packages com.databricks:spark-csv_2.10:1.4.0
+// cat file.csv/*.csv > output.csv
 
 import org.hdfgroup.spark.hdf5._
 import org.apache.spark.sql.expressions.Window
