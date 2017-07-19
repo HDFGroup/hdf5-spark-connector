@@ -1,0 +1,28 @@
+/*
+ Run with:
+
+ time spark-shell -i examples/vrtl.scala --jars target/distribution/scala-2.11/5parky_2.11-0.0.1-ALPHA.jar,lib/sis-jhdf5-batteries_included.jar
+
+ **/
+
+import gov.llnl.spark.hdf._
+import org.apache.spark.sql.functions._
+
+val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+
+/*val df = sqlContext.read.option("extension", "he5").hdf5("/mnt/wrk/hdftest/GSSTF_NCEP.3/", "sparky://files")
+df.count()
+
+val df = sqlContext.read.option("extension", "he5").hdf5("/mnt/wrk/hdftest/GSSTF_NCEP.3/", "sparky://datasets")
+df.count()
+
+val df = sqlContext.read.option("extension", "he5").hdf5("/mnt/wrk/hdftest/GSSTF_NCEP.3/", "sparky://attributes")
+df.count()*/
+
+val df = sqlContext.read.hdf5("/Users/Alan/IdeaProjects/sparky/src/test/resources/gov/llnl/spark/hdf/GSSTF_NCEP.h5","/HDFEOS/GRIDS/NCEP/Data Fields/SST")
+
+df.filter($"value" > -999).describe("value").show()
+
+println(df.filter($"value" > -999).sort("value").collect().drop(df.filter($"value" > -999).sort("value").collect().length/2).head)
+
+System.exit(0)
