@@ -55,10 +55,10 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
         }
       }
 
-      case BoundedScan(dataset, ioSize, number) => {
-        val dataReader = newDatasetReader(dataset)(_.readDataset(ioSize, number))
+      case BoundedScan(dataset, ioSize, offset) => {
+        val dataReader = newDatasetReader(dataset)(_.readDataset(ioSize, offset))
         dataReader.zipWithIndex.map {
-          case (x, index) => Row(fileID, (ioSize * number) + index.toLong, x)
+          case (x, index) => Row(fileID, offset + index.toLong, x)
         }
       }
 
@@ -82,9 +82,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
               else
                 dy % yindex
             val dataReader = newDatasetReader(dataset)(_.readDataset(
-              blockSize,
-              blockIndex
-            ))
+              blockSize, blockIndex))
             val blockFill = blockIndex(0) * blockSizeX * dy
             dataReader.zipWithIndex.map {
               case (x, index) =>

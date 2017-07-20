@@ -237,5 +237,22 @@ class HDF5QuerySuite extends FunTestSuite {
 
     checkEqual(df.drop("fileID"), expected)
   }
+
+  test("Testing int8 hyperslab") {
+    val df = sqlContext.read.option("block", "3").option("window size",
+      "5").option("start", "2").hdf5(h5file, int8test)
+
+    val expectedSchema = StructType(Seq(
+        StructField("fileID", IntegerType, nullable = false),
+        StructField("index0", LongType, nullable = false),
+        StructField("value", ByteType, nullable = false)
+      )
+    )
+    assert(df.schema === expectedSchema)
+
+    val df2 = sqlContext.read.hdf5(h5file, int8test)
+    df.show
+    df2.show
+  }
 }
 

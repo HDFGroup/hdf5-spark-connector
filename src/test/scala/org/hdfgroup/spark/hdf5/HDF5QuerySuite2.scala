@@ -7,7 +7,6 @@ import org.apache.spark.sql.types._
 
 class HDF5QuerySuite2 extends FunTestSuite {
 
-  val h5file = getClass.getResource("test1.h5").toString
   val h5dir = FilenameUtils.getFullPathNoEndSeparator(
     getClass.getResource("test1.h5").getPath
   )
@@ -144,7 +143,7 @@ class HDF5QuerySuite2 extends FunTestSuite {
     checkRowsEqual(minimumIdx, expected)
   }
 
-  test("Reading linearized 2D array : check minmum value") {
+  test("Reading linearized 2D array : check minimum value") {
     val df = sqlContext.read.hdf5(gfile, ssttest)
     val expectedSchema = StructType(
       Seq(

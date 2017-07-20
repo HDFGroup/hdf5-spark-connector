@@ -10,7 +10,7 @@ object HDF5Schema {
   //          case COMPOUND
   sealed trait HDF5Type[T] {
     def readArray(reader: IHDF5Reader): Array[T]
-    def readArrayBlock(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[T]
+    def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[T]
     def readMatrix(reader: IHDF5Reader): Array[T]
     def readMatrixBlock(reader: IHDF5Reader, blockSize: Array[Int], blockIndex: Array[Long]): Array[T]
   }
@@ -19,8 +19,8 @@ object HDF5Schema {
     override def readArray(reader: IHDF5Reader): Array[Byte] =
       reader.int8.readArray(name)
 
-    override def readArrayBlock(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[Byte] =
-      reader.int8.readArrayBlock(name, blockSize, blockNumber)
+    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[Byte] =
+      reader.int8.readArrayBlockWithOffset(name, blockSize, offset)
 
     override def readMatrix(reader: IHDF5Reader): Array[Byte] =
       reader.int8.readMatrix(name).flatten
@@ -33,8 +33,8 @@ object HDF5Schema {
     override def readArray(reader: IHDF5Reader): Array[Short] =
       reader.uint8.readArray(name).map(UnsignedIntUtils.toUint8)
 
-    override def readArrayBlock(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[Short] =
-      reader.uint8.readArrayBlock(name, blockSize, blockNumber).map(UnsignedIntUtils.toUint8)
+    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[Short] =
+      reader.uint8.readArrayBlockWithOffset(name, blockSize, offset).map(UnsignedIntUtils.toUint8)
 
     override def readMatrix(reader: IHDF5Reader): Array[Short] =
       reader.uint8.readMatrix(name).flatten.map(UnsignedIntUtils.toUint8)
@@ -47,8 +47,8 @@ object HDF5Schema {
     override def readArray(reader: IHDF5Reader): Array[Short] =
       reader.int16.readArray(name)
 
-    override def readArrayBlock(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[Short] =
-      reader.int16.readArrayBlock(name, blockSize, blockNumber)
+    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[Short] =
+      reader.int16.readArrayBlockWithOffset(name, blockSize, offset)
 
     override def readMatrix(reader: IHDF5Reader): Array[Short] =
       reader.int16.readMatrix(name).flatten
@@ -61,8 +61,8 @@ object HDF5Schema {
     override def readArray(reader: IHDF5Reader): Array[Int] =
       reader.uint16.readArray(name).map(UnsignedIntUtils.toUint16)
 
-    override def readArrayBlock(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[Int] =
-      reader.uint16.readArrayBlock(name, blockSize, blockNumber).map(UnsignedIntUtils.toUint16)
+    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[Int] =
+      reader.uint16.readArrayBlockWithOffset(name, blockSize, offset).map(UnsignedIntUtils.toUint16)
 
     override def readMatrix(reader: IHDF5Reader): Array[Int] =
       reader.uint16.readMatrix(name).flatten.map(UnsignedIntUtils.toUint16)
@@ -75,8 +75,8 @@ object HDF5Schema {
     override def readArray(reader: IHDF5Reader): Array[Int] =
       reader.int32.readArray(name)
 
-    override def readArrayBlock(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[Int] =
-      reader.int32.readArrayBlock(name, blockSize, blockNumber)
+    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[Int] =
+      reader.int32.readArrayBlock(name, blockSize, offset)
 
     override def readMatrix(reader: IHDF5Reader): Array[Int] =
       reader.int32.readMatrix(name).flatten
@@ -89,8 +89,8 @@ object HDF5Schema {
     override def readArray(reader: IHDF5Reader): Array[Long] =
       reader.uint32.readArray(name).map(UnsignedIntUtils.toUint32)
 
-    override def readArrayBlock(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[Long] =
-      reader.uint32.readArrayBlock(name, blockSize, blockNumber).map(UnsignedIntUtils.toUint32)
+    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[Long] =
+      reader.uint32.readArrayBlockWithOffset(name, blockSize, offset).map(UnsignedIntUtils.toUint32)
 
     override def readMatrix(reader: IHDF5Reader): Array[Long] =
       reader.uint32.readMatrix(name).flatten.map(UnsignedIntUtils.toUint32)
@@ -103,8 +103,8 @@ object HDF5Schema {
     override def readArray(reader: IHDF5Reader): Array[Long] =
       reader.int64.readArray(name)
 
-    override def readArrayBlock(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[Long] =
-      reader.int64.readArrayBlock(name, blockSize, blockNumber)
+    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[Long] =
+      reader.int64.readArrayBlockWithOffset(name, blockSize, offset)
 
     override def readMatrix(reader: IHDF5Reader): Array[Long] =
       reader.int64.readMatrix(name).flatten
@@ -117,8 +117,8 @@ object HDF5Schema {
     override def readArray(reader: IHDF5Reader): Array[Float] =
       reader.float32.readArray(name)
 
-    override def readArrayBlock(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[Float] =
-      reader.float32.readArrayBlock(name, blockSize, blockNumber)
+    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[Float] =
+      reader.float32.readArrayBlockWithOffset(name, blockSize, offset)
 
     override def readMatrix(reader: IHDF5Reader): Array[Float] =
       reader.float32.readMatrix(name).flatten
@@ -131,8 +131,8 @@ object HDF5Schema {
     override def readArray(reader: IHDF5Reader): Array[Double] =
       reader.float64.readArray(name)
 
-    override def readArrayBlock(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[Double] =
-      reader.float64.readArrayBlock(name, blockSize, blockNumber)
+    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[Double] =
+      reader.float64.readArrayBlockWithOffset(name, blockSize, offset)
 
     override def readMatrix(reader: IHDF5Reader): Array[Double] =
       reader.float64.readMatrix(name).flatten
@@ -145,8 +145,8 @@ object HDF5Schema {
     override def readArray(reader: IHDF5Reader): Array[String] =
       reader.string.readArray(name)
 
-    override def readArrayBlock(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[String] =
-      reader.string.readArrayBlock(name, blockSize, blockNumber)
+    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[String] =
+      reader.string.readArrayBlock(name, blockSize, offset)
 
     override def readMatrix(reader: IHDF5Reader): Array[String] = {
       throw new SparkException("'readMatrix' does not support strings.")

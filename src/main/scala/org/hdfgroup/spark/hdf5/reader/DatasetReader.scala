@@ -21,10 +21,10 @@ class DatasetReader[T](val reader: IHDF5Reader, val node: ArrayVar[T]) extends S
       }
     }
 
-  def readDataset(blockSize: Int, blockNumber: Long): Array[T] = {
+  def readDataset(blockSize: Int, offset: Long): Array[T] = {
     log.trace("readDataset(blockSize: Int, blockNumber: Long): Array[T]")
 
-    node.contains.readArrayBlock(reader, blockSize, blockNumber)
+    node.contains.readArrayBlockWithOffset(reader, blockSize, offset)
   }
 
   def readDataset(blockSize: Array[Int], blockIndex: Array[Long]): Array[T] = {
