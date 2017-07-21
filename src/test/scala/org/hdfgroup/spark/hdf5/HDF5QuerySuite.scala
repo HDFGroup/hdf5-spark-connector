@@ -238,19 +238,36 @@ class HDF5QuerySuite extends FunTestSuite {
     checkEqual(df.drop("fileID"), expected)
   }
 
-  test("Testing int8 hyperslab") {
-    val df = sqlContext.read.option("block", "3").option("window size",
-      "5").option("start", "2").hdf5(h5file, int8test)
+  test("Testing 1d hyperslab") {
+    val df = sqlContext.read.option("block", "3").option("start", "2").hdf5(h5file, int8test)
 
     val expectedSchema = StructType(Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
-        StructField("value", ByteType, nullable = false)
-      )
-    )
+      StructField("fileID", IntegerType, nullable = false),
+      StructField("index0", LongType, nullable = false),
+      StructField("value", ByteType, nullable = false)
+    ))
     assert(df.schema === expectedSchema)
 
     val df2 = sqlContext.read.hdf5(h5file, int8test)
+    df.show
+    df2.show
+  }
+
+  val gfile = getClass.getResource("GSSTF_NCEP.h5").toString
+  val ssttest = "/HDFEOS/GRIDS/NCEP/Data Fields/SST"
+
+  test("Testing 2d hyperslab") {
+    val df = sqlContext.read.option("block", "3,3").option("window size",
+      "100").hdf5(gfile, ssttest)
+
+    val expectedSchema = StructType(Seq(
+      StructField("fileID", IntegerType, nullable = false),
+      StructField("index0", LongType, nullable = false),
+      StructField("value", ByteType, nullable = false)
+    ))
+    assert(df.schema === expectedSchema)
+
+    val df2 = sqlContext.read.hdf5(gfile, ssttest)
     df.show
     df2.show
   }

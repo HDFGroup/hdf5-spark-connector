@@ -114,9 +114,12 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
   override def buildScan(): RDD[Row] = {
     log.trace("buildScan(): RDD[Row]")
 
+    val hasStart = start(0) != -1
+    val hasBlock = block(0) != -1
+
     val scans = datasets.map { UnboundedScan(_, chunkSize) }
     val splitScans = scans.flatMap {
-      case UnboundedScan(ds, size) if (ds.size > size) =>
+      case UnboundedScan(ds, size) if (ds.size > size || hasStart || hasBlock) =>
         ds.dimension.length match {
           case 1 => {
             val startPoint =
@@ -126,13 +129,12 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
               (0L until Math.ceil(ds.size.toFloat / size).toLong).map(x =>
                 BoundedScan(ds, size, x * size + startPoint))
             } else {
-              (0L until Math.ceil(block(0).toFloat / size).toLong).map(x =>
-                BoundedScan(ds, size, x * size + startPoint))
+                Seq(BoundedScan(ds, block(0).toInt, block(0) + startPoint))
             }
           }
           case 2 => {
             val startPoint =
-              if (start(0) == -1) 0L
+              if (start(0) == -1) Array(0, 0)
               else start
             val d =
               if (block(0) == -1) ds.dimension
