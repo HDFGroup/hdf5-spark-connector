@@ -29,7 +29,8 @@ class DefaultSource extends RelationProvider {
     val chunkSize = parameters.getOrElse("window size", "10000").toInt
     val start = parameters.getOrElse("start", "-1").split(",").map(_.toLong)
     val block = parameters.getOrElse("block", "-1").split(",").map(_.toInt)
-    new HDF5Relation(paths, dataset, extensions, chunkSize, start, block)(sqlContext)
+    val recursion = parameters.getOrElse("recursion", "true").toBoolean
+    new HDF5Relation(paths, dataset, extensions, chunkSize, start, block, recursion)(sqlContext)
   }
 }
 

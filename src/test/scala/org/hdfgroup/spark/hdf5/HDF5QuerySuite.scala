@@ -270,5 +270,21 @@ class HDF5QuerySuite extends FunTestSuite {
       Row(5762L), Row(5763L), Row(5764L))
     assert(len === expect)
   }
+
+  val path = "/Users/Alan/IdeaProjects/5parky/examples/GSSTF_NCEP_mini"
+
+  test("Testing non-recursion") {
+    val df = sqlContext.read.option("recursion", "false").
+      option("extension", "he5").hdf5(path, ssttest)
+    val df2 = sqlContext.read.option("extension", "he5").hdf5(path, ssttest)
+    val expectedSchema = StructType(Seq(
+      StructField("fileID", IntegerType, nullable = false),
+      StructField("index0", LongType, nullable = false),
+      StructField("value", FloatType, nullable = false)
+    ))
+    assert(df.schema === expectedSchema)
+
+    assert(df.count()*3 === df2.count())
+  }
 }
 

@@ -16,7 +16,8 @@ import org.apache.spark.sql.types.StructType
 import org.slf4j.LoggerFactory
 
 class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtension: Array[String],
-                   val chunkSize: Int, val start: Array[Long], val block: Array[Int])(@transient val sqlContext: SQLContext)
+                   val chunkSize: Int, val start: Array[Long], val block: Array[Int],
+                   val recursion: Boolean)(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan {
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -34,7 +35,7 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
     val leaves = roots.flatMap {
       case status if status.isFile => Set(status)
       case directory if directory.isDirectory =>
-        val it = fileSystem.listFiles(directory.getPath, true)
+        val it = fileSystem.listFiles(directory.getPath, recursion)
         var children: Set[FileStatus] = Set()
         while (it.hasNext) {
           children += it.next()
