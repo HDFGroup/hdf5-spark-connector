@@ -86,6 +86,7 @@ class HDF5QuerySuite2 extends FunTestSuite {
 
   test("Reading linearized 2D array : check row count") {
     val df = sqlContext.read.hdf5(gfile, ssttest)
+    df.show
     val expectedSchema = StructType(
       Seq(
         StructField("fileID", IntegerType, nullable = false),

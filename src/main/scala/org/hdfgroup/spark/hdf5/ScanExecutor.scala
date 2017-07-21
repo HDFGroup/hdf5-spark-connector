@@ -19,7 +19,7 @@ object ScanExecutor {
   }
   case class UnboundedScan(dataset: ArrayVar[_], ioSize: Int) extends ScanItem
   case class BoundedScan(dataset: ArrayVar[_], ioSize: Int, blockNumber: Long = 0) extends ScanItem
-  case class BoundedMDScan(dataset: ArrayVar[_], ioSize: Int, blockIndex: Array[Long]) extends ScanItem
+  case class BoundedMDScan(dataset: ArrayVar[_], ioSize: Int, blockDimensions: Array[Int], blockIndex: Array[Long]) extends ScanItem
 }
 
 class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
@@ -62,35 +62,25 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
         }
       }
 
-      case BoundedMDScan(dataset, ioSize, blockIndex) =>
+      case BoundedMDScan(dataset, ioSize, blockDimensions, blockIndex) =>
         dataset.dimension.length match {
           case 2 => {
             // Calculations to correctly map the index of each datapoint in
             // respect to the overall linearized matrix.
-            val dx = dataset.dimension(0)
-            val dy = dataset.dimension(1)
-            val x = ioSize * dx / dy
-            val y = ioSize * dy / dx
-            val blockSizeX = math.sqrt(x).toInt
-            val blockSizeY = math.sqrt(y).toInt
-            val blockSize = Array[Int](blockSizeX, blockSizeY)
-            val yindex = blockSizeY * blockIndex(1)
+            val d = dataset.dimension
+            val yindex = blockDimensions(1) * blockIndex(1)
             val edgeBlockY =
-              if (blockIndex(1) <
-                ((Math.ceil(dy / math.sqrt(ioSize * dy / dx))).toInt - 1))
-                blockSizeY
+              if (blockIndex(1) < ((Math.ceil(d(1) / blockDimensions(1))).toInt - 1))
+                blockDimensions(1)
               else
-                dy % yindex
+                d(1) % yindex
             val dataReader = newDatasetReader(dataset)(_.readDataset(
-              blockSize, blockIndex))
-            val blockFill = blockIndex(0) * blockSizeX * dy
+              blockDimensions, blockIndex))
+            val blockFill = blockIndex(0) * blockDimensions(0) * d(1)
             dataReader.zipWithIndex.map {
               case (x, index) =>
-                Row(
-                  fileID,
-                  blockFill + (index - index % edgeBlockY) / edgeBlockY * dy +
-                    index % edgeBlockY + yindex, x
-                )
+                Row(fileID, blockFill + (index - index % edgeBlockY) /
+                  edgeBlockY * d(1) + index % edgeBlockY + yindex, x)
             }
           }
 

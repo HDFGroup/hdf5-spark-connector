@@ -248,28 +248,23 @@ class HDF5QuerySuite extends FunTestSuite {
     ))
     assert(df.schema === expectedSchema)
 
-    val df2 = sqlContext.read.hdf5(h5file, int8test)
-    df.show
-    df2.show
+    val len = df.drop("fileID").drop("index0").sort("value").collect
+    val expect = Array(Row(0L), Row(1L), Row(2L))
+    assert(len === expect)
   }
 
   val gfile = getClass.getResource("GSSTF_NCEP.h5").toString
   val ssttest = "/HDFEOS/GRIDS/NCEP/Data Fields/SST"
 
   test("Testing 2d hyperslab") {
-    val df = sqlContext.read.option("block", "3,3").option("window size",
-      "100").hdf5(gfile, ssttest)
-
+    val df = sqlContext.read.option("block", "3,3").option("start", "2,2").hdf5(gfile, ssttest)
+    df.show
     val expectedSchema = StructType(Seq(
       StructField("fileID", IntegerType, nullable = false),
       StructField("index0", LongType, nullable = false),
-      StructField("value", ByteType, nullable = false)
+      StructField("value", FloatType, nullable = false)
     ))
     assert(df.schema === expectedSchema)
-
-    val df2 = sqlContext.read.hdf5(gfile, ssttest)
-    df.show
-    df2.show
   }
 }
 

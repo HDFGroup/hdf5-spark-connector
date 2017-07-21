@@ -16,7 +16,7 @@ import org.apache.spark.sql.types.StructType
 import org.slf4j.LoggerFactory
 
 class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtension: Array[String],
-                   val chunkSize: Int, val start: Array[Long], val block: Array[Long])(@transient val sqlContext: SQLContext)
+                   val chunkSize: Int, val start: Array[Long], val block: Array[Int])(@transient val sqlContext: SQLContext)
   extends BaseRelation with TableScan {
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -123,29 +123,33 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
         ds.dimension.length match {
           case 1 => {
             val startPoint =
-              if (start(0) == -1) 0L
-              else start(0)
-            if (block(0) == -1) {
+              if (hasStart && start.size == 1) start(0)
+              else 0L
+            if (hasBlock && block.size == 1) {
+              Seq(BoundedScan(ds, block(0), startPoint))
+            } else {
               (0L until Math.ceil(ds.size.toFloat / size).toLong).map(x =>
                 BoundedScan(ds, size, x * size + startPoint))
-            } else {
-                Seq(BoundedScan(ds, block(0).toInt, block(0) + startPoint))
             }
           }
           case 2 => {
             val startPoint =
-              if (start(0) == -1) Array(0, 0)
-              else start
-            val d =
-              if (block(0) == -1) ds.dimension
-              else block
+              if (hasStart && start.size == 2) start
+              else Array(0L, 0L)
+            if (hasBlock && block.size == 2) {
+              Seq(BoundedMDScan(ds, 0, block, startPoint))
+            }
+            val d = ds.dimension
+            val blockSizeX = math.sqrt(size * d(0) / d(1)).toInt
+            val blockSizeY = math.sqrt(size * d(1) / d(0)).toInt
+            val blockSize = Array[Int](blockSizeX, blockSizeY)
             // Creates block dimensions roughly proportional to the
-            val matrixX = (Math.ceil(d(0) / math.sqrt(size * d(0) / d(1)))).toInt
             // matrix's dimensions and roughly equivalent to the window size.
-            val matrixY = (Math.ceil(d(1) / math.sqrt(size * d(1) / d(0)))).toInt
+            val matrixX = (Math.ceil(d(0) / blockSizeX)).toInt
+            val matrixY = (Math.ceil(d(1) / blockSizeY)).toInt
             // Creates bounded scans on the blocks with their corresponding
             // indices to cover the entire matrix
-            (0L until (matrixX * matrixY).toLong).map(i => BoundedMDScan(ds, size, Array[Long]((i % matrixX).toLong, (i / matrixX).toLong)))
+            (0L until (matrixX * matrixY).toLong).map(i => BoundedMDScan(ds, 0, blockSize, Array[Long]((i % matrixX).toLong, (i / matrixX).toLong)))
           }
 
           case _ => throw new SparkException("Unsupported dataset rank!")
