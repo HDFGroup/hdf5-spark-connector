@@ -11,25 +11,25 @@ class DatasetReader[T](val reader: IHDF5Reader, val node: ArrayVar[T]) extends S
   private val log = LoggerFactory.getLogger(getClass)
 
   def readDataset(): Array[T] =
-    {
-      log.trace("readDataset(): Array[T]", node.dimension.length)
+  {
+    log.trace("readDataset(): Array[T]", node.dimension.length)
 
-      node.dimension.length match {
-        case 1 => node.contains.readArray(reader)
-        case 2 => node.contains.readMatrix(reader)
-        case _ => throw new SparkException("Unsupported dataset rank!")
-      }
+    node.dimension.length match {
+      case 1 => node.contains.readArray(reader)
+      case 2 => node.contains.readMatrix(reader)
+      case _ => throw new SparkException("Unsupported dataset rank!")
     }
-
-  def readDataset(blockSize: Int, blockNumber: Long): Array[T] = {
-    log.trace("readDataset(blockSize: Int, blockNumber: Long): Array[T]")
-
-    node.contains.readArrayBlock(reader, blockSize, blockNumber)
   }
 
-  def readDataset(blockSize: Array[Int], blockIndex: Array[Long]): Array[T] = {
+  def readDataset(blockSize: Int, offset: Long): Array[T] = {
+    log.trace("readDataset(blockSize: Int, blockNumber: Long): Array[T]")
+
+    node.contains.readArrayBlockWithOffset(reader, blockSize, offset)
+  }
+
+  def readDataset(blockSize: Array[Int], offset: Array[Long]): Array[T] = {
     log.trace("readDataset(blockSize: Array[Int], blockIndex: Array[Long]): Array[T]")
 
-    node.contains.readMatrixBlock(reader, blockSize, blockIndex)
+    node.contains.readMatrixBlockWithOffset(reader, blockSize, offset)
   }
 }

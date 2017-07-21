@@ -27,8 +27,9 @@ class DefaultSource extends RelationProvider {
 
     val extensions = parameters.getOrElse("extension", "h5").split(",").map(_.trim)
     val chunkSize = parameters.getOrElse("window size", "10000").toInt
-
-    new HDF5Relation(paths, dataset, extensions, chunkSize)(sqlContext)
+    val start = parameters.getOrElse("start", "-1").split(",").map(_.toLong)
+    val block = parameters.getOrElse("block", "-1").split(",").map(_.toInt)
+    new HDF5Relation(paths, dataset, extensions, chunkSize, start, block)(sqlContext)
   }
 }
 

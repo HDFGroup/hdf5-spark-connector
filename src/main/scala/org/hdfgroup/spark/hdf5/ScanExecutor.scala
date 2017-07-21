@@ -19,7 +19,7 @@ object ScanExecutor {
   }
   case class UnboundedScan(dataset: ArrayVar[_], ioSize: Int) extends ScanItem
   case class BoundedScan(dataset: ArrayVar[_], ioSize: Int, blockNumber: Long = 0) extends ScanItem
-  case class BoundedMDScan(dataset: ArrayVar[_], ioSize: Int, blockIndex: Array[Long]) extends ScanItem
+  case class BoundedMDScan(dataset: ArrayVar[_], ioSize: Int, blockDimensions: Array[Int], offset: Array[Long]) extends ScanItem
 }
 
 class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
@@ -55,49 +55,30 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
         }
       }
 
-      case BoundedScan(dataset, ioSize, number) => {
-        val dataReader = newDatasetReader(dataset)(_.readDataset(ioSize, number))
+      case BoundedScan(dataset, ioSize, offset) => {
+        val dataReader = newDatasetReader(dataset)(_.readDataset(ioSize, offset))
         dataReader.zipWithIndex.map {
-          case (x, index) => Row(fileID, (ioSize * number) + index.toLong, x)
+          case (x, index) => Row(fileID, offset + index.toLong, x)
         }
       }
 
-      case BoundedMDScan(dataset, ioSize, blockIndex) =>
-        dataset.dimension.length match {
-          case 2 => {
-            // Calculations to correctly map the index of each datapoint in
-            // respect to the overall linearized matrix.
-            val dx = dataset.dimension(0)
-            val dy = dataset.dimension(1)
-            val x = ioSize * dx / dy
-            val y = ioSize * dy / dx
-            val blockSizeX = math.sqrt(x).toInt
-            val blockSizeY = math.sqrt(y).toInt
-            val blockSize = Array[Int](blockSizeX, blockSizeY)
-            val yindex = blockSizeY * blockIndex(1)
-            val edgeBlockY =
-              if (blockIndex(1) <
-                ((Math.ceil(dy / math.sqrt(ioSize * dy / dx))).toInt - 1))
-                blockSizeY
-              else
-                dy % yindex
-            val dataReader = newDatasetReader(dataset)(_.readDataset(
-              blockSize,
-              blockIndex
-            ))
-            val blockFill = blockIndex(0) * blockSizeX * dy
-            dataReader.zipWithIndex.map {
-              case (x, index) =>
-                Row(
-                  fileID,
-                  blockFill + (index - index % edgeBlockY) / edgeBlockY * dy +
-                    index % edgeBlockY + yindex, x
-                )
-            }
-          }
-
-          case _ => throw new SparkException("Unsupported dataset rank!")
+      case BoundedMDScan(dataset, ioSize, blockDimensions, offset) => {
+        // Calculations to correctly map the index of each datapoint in
+        // respect to the overall linearized matrix.
+        val dataReader = newDatasetReader(dataset)(_.readDataset(blockDimensions, offset))
+        val d = dataset.dimension
+        val edgeBlockY =
+          if ((offset(1) / blockDimensions(1)) < ((Math.floor(d(1) / blockDimensions(1))).toInt))
+            blockDimensions(1)
+          else
+            d(1) % offset(1)
+        val blockFill = offset(0) * d(1)
+        dataReader.zipWithIndex.map {
+          case (x, index) =>
+            Row(fileID, blockFill + (index - index % edgeBlockY) / edgeBlockY
+              * d(1) + index % edgeBlockY + offset(1), x)
         }
+      }
     }
   }
 

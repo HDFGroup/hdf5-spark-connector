@@ -7,7 +7,6 @@ import org.apache.spark.sql.types._
 
 class HDF5QuerySuite2 extends FunTestSuite {
 
-  val h5file = getClass.getResource("test1.h5").toString
   val h5dir = FilenameUtils.getFullPathNoEndSeparator(
     getClass.getResource("test1.h5").getPath
   )
@@ -33,7 +32,7 @@ class HDF5QuerySuite2 extends FunTestSuite {
         StructField("fileID", IntegerType, nullable = false),
         StructField("index0", LongType, nullable = false),
         StructField("value", FloatType, nullable = false)
-    ))
+      ))
     assert(biddf.schema === expectedSchema)
 
     val bid = biddf.agg(max(biddf.columns(2))).head
@@ -75,7 +74,7 @@ class HDF5QuerySuite2 extends FunTestSuite {
         StructField("fileID", IntegerType, nullable = false),
         StructField("index0", LongType, nullable = false),
         StructField("value", IntegerType, nullable = false)
-    ))
+      ))
     assert(df.schema === expectedSchema)
 
     val expected = (0 until 30).map { x => Row(x, x.toInt) }
@@ -92,7 +91,7 @@ class HDF5QuerySuite2 extends FunTestSuite {
         StructField("fileID", IntegerType, nullable = false),
         StructField("index0", LongType, nullable = false),
         StructField("value", FloatType, nullable = false)
-    ))
+      ))
     assert(df.schema === expectedSchema)
 
     val count = Row(df.count())
@@ -144,7 +143,7 @@ class HDF5QuerySuite2 extends FunTestSuite {
     checkRowsEqual(minimumIdx, expected)
   }
 
-  test("Reading linearized 2D array : check minmum value") {
+  test("Reading linearized 2D array : check minimum value") {
     val df = sqlContext.read.hdf5(gfile, ssttest)
     val expectedSchema = StructType(
       Seq(
@@ -265,8 +264,6 @@ class HDF5QuerySuite2 extends FunTestSuite {
       )
     )
     assert(df.schema === expectedSchema)
-
-    // df.show(false)
 
     val sortedVals = df.drop("fileID").drop("object path").drop("element type")
       .drop("dimensions").sort("attribute name").head()

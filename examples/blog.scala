@@ -1,7 +1,9 @@
 // INSTRUCTIONS TO RUN:
 // time spark-shell -i examples/blog.scala --jars target/scala-2.11/5parky_2.11-0.0.1-ALPHA.jar,lib/sis-jhdf5-batteries_included.jar --packages com.databricks:spark-csv_2.10:1.4.0
+// time spark-shell -i examples/blog.scala --jars target/scala-2.11/5parky_2.11-0.0.1-ALPHA.jar,lib/sis-jhdf5-batteries_included.jar --packages com.databricks:spark-avro_2.11:3.2.0
 // cat file.csv/*.csv > output.csv
 
+import com.databricks.spark.avro._
 import org.hdfgroup.spark.hdf5._
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions._
@@ -16,6 +18,8 @@ val df = sqlContext.read.
   option("extension", "he5").
   option("window size", "200000").
   hdf5(pathName, varName)
+
+df.write.avro("df.avro")
 
 // extract the date from the file name
 val getDate = udf((file: String) =>
