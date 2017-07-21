@@ -10,9 +10,9 @@ object HDF5Schema {
   //          case COMPOUND
   sealed trait HDF5Type[T] {
     def readArray(reader: IHDF5Reader): Array[T]
-    def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, blockNumber: Long): Array[T]
+    def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[T]
     def readMatrix(reader: IHDF5Reader): Array[T]
-    def readMatrixBlock(reader: IHDF5Reader, blockSize: Array[Int], blockIndex: Array[Long]): Array[T]
+    def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[T]
   }
 
   case class Int8(fileID: Integer, name: String) extends HDF5Type[Byte] {
@@ -25,8 +25,8 @@ object HDF5Schema {
     override def readMatrix(reader: IHDF5Reader): Array[Byte] =
       reader.int8.readMatrix(name).flatten
 
-    override def readMatrixBlock(reader: IHDF5Reader, blockSize: Array[Int], blockIndex: Array[Long]): Array[Byte] =
-      reader.int8.readMatrixBlock(name, blockSize(0), blockSize(1), blockIndex(0), blockIndex(1)).flatten
+    override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Byte] =
+      reader.int8.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
   }
 
   case class UInt8(fileID: Integer, name: String) extends HDF5Type[Short] {
@@ -39,8 +39,8 @@ object HDF5Schema {
     override def readMatrix(reader: IHDF5Reader): Array[Short] =
       reader.uint8.readMatrix(name).flatten.map(UnsignedIntUtils.toUint8)
 
-    override def readMatrixBlock(reader: IHDF5Reader, blockSize: Array[Int], blockIndex: Array[Long]): Array[Short] =
-      reader.uint8.readMatrixBlock(name, blockSize(0), blockSize(1), blockIndex(0), blockIndex(1)).flatten.map(UnsignedIntUtils.toUint8)
+    override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Short] =
+      reader.uint8.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten.map(UnsignedIntUtils.toUint8)
   }
 
   case class Int16(fileID: Integer, name: String) extends HDF5Type[Short] {
@@ -53,8 +53,8 @@ object HDF5Schema {
     override def readMatrix(reader: IHDF5Reader): Array[Short] =
       reader.int16.readMatrix(name).flatten
 
-    override def readMatrixBlock(reader: IHDF5Reader, blockSize: Array[Int], blockIndex: Array[Long]): Array[Short] =
-      reader.int16.readMatrixBlock(name, blockSize(0), blockSize(1), blockIndex(0), blockIndex(1)).flatten
+    override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Short] =
+      reader.int16.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
   }
 
   case class UInt16(fileID: Integer, name: String) extends HDF5Type[Int] {
@@ -67,8 +67,8 @@ object HDF5Schema {
     override def readMatrix(reader: IHDF5Reader): Array[Int] =
       reader.uint16.readMatrix(name).flatten.map(UnsignedIntUtils.toUint16)
 
-    override def readMatrixBlock(reader: IHDF5Reader, blockSize: Array[Int], blockIndex: Array[Long]): Array[Int] =
-      reader.uint16.readMatrixBlock(name, blockSize(0), blockSize(1), blockIndex(0), blockIndex(1)).flatten.map(UnsignedIntUtils.toUint16)
+    override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Int] =
+      reader.uint16.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten.map(UnsignedIntUtils.toUint16)
   }
 
   case class Int32(fileID: Integer, name: String) extends HDF5Type[Int] {
@@ -81,8 +81,8 @@ object HDF5Schema {
     override def readMatrix(reader: IHDF5Reader): Array[Int] =
       reader.int32.readMatrix(name).flatten
 
-    override def readMatrixBlock(reader: IHDF5Reader, blockSize: Array[Int], blockIndex: Array[Long]): Array[Int] =
-      reader.int32.readMatrixBlock(name, blockSize(0), blockSize(1), blockIndex(0), blockIndex(1)).flatten
+    override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Int] =
+      reader.int32.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
   }
 
   case class UInt32(ffileID: Integer, name: String) extends HDF5Type[Long] {
@@ -95,8 +95,8 @@ object HDF5Schema {
     override def readMatrix(reader: IHDF5Reader): Array[Long] =
       reader.uint32.readMatrix(name).flatten.map(UnsignedIntUtils.toUint32)
 
-    override def readMatrixBlock(reader: IHDF5Reader, blockSize: Array[Int], blockIndex: Array[Long]): Array[Long] =
-      reader.uint32.readMatrixBlock(name, blockSize(0), blockSize(1), blockIndex(0), blockIndex(1)).flatten.map(UnsignedIntUtils.toUint32)
+    override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Long] =
+      reader.uint32.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten.map(UnsignedIntUtils.toUint32)
   }
 
   case class Int64(fileID: Integer, name: String) extends HDF5Type[Long] {
@@ -109,8 +109,8 @@ object HDF5Schema {
     override def readMatrix(reader: IHDF5Reader): Array[Long] =
       reader.int64.readMatrix(name).flatten
 
-    override def readMatrixBlock(reader: IHDF5Reader, blockSize: Array[Int], blockIndex: Array[Long]): Array[Long] =
-      reader.int64.readMatrixBlock(name, blockSize(0), blockSize(1), blockIndex(0), blockIndex(1)).flatten
+    override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Long] =
+      reader.int64.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
   }
 
   case class Float32(fileID: Integer, name: String) extends HDF5Type[Float] {
@@ -123,8 +123,8 @@ object HDF5Schema {
     override def readMatrix(reader: IHDF5Reader): Array[Float] =
       reader.float32.readMatrix(name).flatten
 
-    override def readMatrixBlock(reader: IHDF5Reader, blockSize: Array[Int], blockIndex: Array[Long]): Array[Float] =
-      reader.float32.readMatrixBlock(name, blockSize(0), blockSize(1), blockIndex(0), blockIndex(1)).flatten
+    override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Float] =
+      reader.float32.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
   }
 
   case class Float64(fileID: Integer, name: String) extends HDF5Type[Double] {
@@ -137,8 +137,8 @@ object HDF5Schema {
     override def readMatrix(reader: IHDF5Reader): Array[Double] =
       reader.float64.readMatrix(name).flatten
 
-    override def readMatrixBlock(reader: IHDF5Reader, blockSize: Array[Int], blockIndex: Array[Long]): Array[Double] =
-      reader.float64.readMatrixBlock(name, blockSize(0), blockSize(1), blockIndex(0), blockIndex(1)).flatten
+    override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Double] =
+      reader.float64.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
   }
 
   case class FLString(fileID: Integer, name: String) extends HDF5Type[String] {
@@ -153,7 +153,7 @@ object HDF5Schema {
       Array[String]("")
     }
 
-    override def readMatrixBlock(reader: IHDF5Reader, blockSize: Array[Int], blockIndex: Array[Long]): Array[String] = {
+    override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[String] = {
       throw new SparkException("'readMatrixBlock' does not support strings.")
       Array[String]("")
     }

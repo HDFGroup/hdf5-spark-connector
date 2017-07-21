@@ -32,7 +32,7 @@ class HDF5QuerySuite2 extends FunTestSuite {
         StructField("fileID", IntegerType, nullable = false),
         StructField("index0", LongType, nullable = false),
         StructField("value", FloatType, nullable = false)
-    ))
+      ))
     assert(biddf.schema === expectedSchema)
 
     val bid = biddf.agg(max(biddf.columns(2))).head
@@ -74,7 +74,7 @@ class HDF5QuerySuite2 extends FunTestSuite {
         StructField("fileID", IntegerType, nullable = false),
         StructField("index0", LongType, nullable = false),
         StructField("value", IntegerType, nullable = false)
-    ))
+      ))
     assert(df.schema === expectedSchema)
 
     val expected = (0 until 30).map { x => Row(x, x.toInt) }
@@ -86,13 +86,12 @@ class HDF5QuerySuite2 extends FunTestSuite {
 
   test("Reading linearized 2D array : check row count") {
     val df = sqlContext.read.hdf5(gfile, ssttest)
-    df.show
     val expectedSchema = StructType(
       Seq(
         StructField("fileID", IntegerType, nullable = false),
         StructField("index0", LongType, nullable = false),
         StructField("value", FloatType, nullable = false)
-    ))
+      ))
     assert(df.schema === expectedSchema)
 
     val count = Row(df.count())
@@ -265,8 +264,6 @@ class HDF5QuerySuite2 extends FunTestSuite {
       )
     )
     assert(df.schema === expectedSchema)
-
-    // df.show(false)
 
     val sortedVals = df.drop("fileID").drop("object path").drop("element type")
       .drop("dimensions").sort("attribute name").head()

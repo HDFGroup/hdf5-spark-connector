@@ -258,13 +258,17 @@ class HDF5QuerySuite extends FunTestSuite {
 
   test("Testing 2d hyperslab") {
     val df = sqlContext.read.option("block", "3,3").option("start", "2,2").hdf5(gfile, ssttest)
-    df.show
     val expectedSchema = StructType(Seq(
       StructField("fileID", IntegerType, nullable = false),
       StructField("index0", LongType, nullable = false),
       StructField("value", FloatType, nullable = false)
     ))
     assert(df.schema === expectedSchema)
+
+    val len = df.drop("fileID").drop("value").sort("index0").collect
+    val expect = Array(Row(2882L), Row(2883L), Row(2884L), Row(4322L), Row(4323L), Row(4324L),
+      Row(5762L), Row(5763L), Row(5764L))
+    assert(len === expect)
   }
 }
 

@@ -123,9 +123,9 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
         ds.dimension.length match {
           case 1 => {
             val startPoint =
-              if (hasStart && start.size == 1) start(0)
+              if (hasStart && start.length == 1) start(0)
               else 0L
-            if (hasBlock && block.size == 1) {
+            if (hasBlock && block.length == 1) {
               Seq(BoundedScan(ds, block(0), startPoint))
             } else {
               (0L until Math.ceil(ds.size.toFloat / size).toLong).map(x =>
@@ -134,22 +134,24 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
           }
           case 2 => {
             val startPoint =
-              if (hasStart && start.size == 2) start
+              if (hasStart && start.length == 2) start
               else Array(0L, 0L)
-            if (hasBlock && block.size == 2) {
+            if (hasBlock && block.length == 2) {
               Seq(BoundedMDScan(ds, 0, block, startPoint))
+            } else {
+              val d = ds.dimension
+              val blockSizeX = math.sqrt(size * d(0) / d(1))
+              val blockSizeY = math.sqrt(size * d(1) / d(0))
+              val blockSize = Array[Int](blockSizeX.toInt, blockSizeY.toInt)
+              // Creates block dimensions roughly proportional to the
+              // matrix's dimensions and roughly equivalent to the window size.
+              val matrixX = (Math.ceil(d(0) / blockSizeX)).toInt
+              val matrixY = (Math.ceil(d(1) / blockSizeY)).toInt
+              // Creates bounded scans on the blocks with their corresponding
+              // indices to cover the entire matrix
+              (0L until (matrixX * matrixY).toLong).map(i => BoundedMDScan(ds, 0, blockSize, Array[Long]((i % matrixX *
+                blockSize(0)).toLong + startPoint(0), (i / matrixX * blockSize(1)).toLong + startPoint(1))))
             }
-            val d = ds.dimension
-            val blockSizeX = math.sqrt(size * d(0) / d(1)).toInt
-            val blockSizeY = math.sqrt(size * d(1) / d(0)).toInt
-            val blockSize = Array[Int](blockSizeX, blockSizeY)
-            // Creates block dimensions roughly proportional to the
-            // matrix's dimensions and roughly equivalent to the window size.
-            val matrixX = (Math.ceil(d(0) / blockSizeX)).toInt
-            val matrixY = (Math.ceil(d(1) / blockSizeY)).toInt
-            // Creates bounded scans on the blocks with their corresponding
-            // indices to cover the entire matrix
-            (0L until (matrixX * matrixY).toLong).map(i => BoundedMDScan(ds, 0, blockSize, Array[Long]((i % matrixX).toLong, (i / matrixX).toLong)))
           }
 
           case _ => throw new SparkException("Unsupported dataset rank!")
