@@ -19,7 +19,7 @@ val df = sqlContext.read.
   option("window size", "200000").
   hdf5(pathName, varName)
 
-df.write.avro("df.avro")
+// df.write.avro("df.avro")
 
 // extract the date from the file name
 val getDate = udf((file: String) =>
