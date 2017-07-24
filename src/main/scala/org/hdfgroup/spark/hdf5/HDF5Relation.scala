@@ -126,8 +126,14 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
             val startPoint =
               if (hasStart && start.length == 1) start(0)
               else 0L
-            if (hasBlock && block.length == 1) {
+
+            if (hasBlock && block.length == 1 && block(0) <= size) {
               Seq(BoundedScan(ds, block(0), startPoint))
+            } else if (hasBlock && block.length == 1) {
+              (0L until Math.ceil(block(0).toFloat / size).toLong).map(x => {
+                if ((x+1)*size < block(0)) BoundedScan(ds, size, x * size + startPoint)
+                else BoundedScan(ds, block(0) % (x.toInt*size), x * size + startPoint)
+              })
             } else {
               (0L until Math.ceil(ds.size.toFloat / size).toLong).map(x =>
                 BoundedScan(ds, size, x * size + startPoint))
@@ -137,9 +143,28 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
             val startPoint =
               if (hasStart && start.length == 2) start
               else Array(0L, 0L)
-            if (hasBlock && block.length == 2) {
+
+            if (hasBlock && block.length == 2 && block(0)*block(1) <= size) {
               Seq(BoundedMDScan(ds, 0, block, startPoint))
-            } else {
+            } else if (hasBlock && block.length == 2) {
+              val blockSizeX = math.sqrt(size * block(0) / block(1))
+              val blockSizeY = math.sqrt(size * block(1) / block(0))
+              val blockSize = Array[Int](blockSizeX.toInt, blockSizeY.toInt)
+              val matrixX = (Math.ceil(block(0) / blockSizeX)).toInt
+              val matrixY = (Math.ceil(block(1) / blockSizeY)).toInt
+              (0 until (matrixX * matrixY)).map(x => {
+                BoundedMDScan(ds, 0, Array[Int](
+                  if ((x % matrixX + 1) * blockSize(0) > block(0)) {
+                    (block(0) % (x % matrixX * blockSize(0)))
+                  } else blockSize(0) ,
+                  if ((x / matrixY + 1) * blockSize(1) > block(1)){
+                    (block(1) % (x / matrixY * blockSize(1)))
+                  } else blockSize(1)
+                ), Array[Long]((x % matrixX * blockSize(0)).toLong
+                  + startPoint(0), (x / matrixX * blockSize(1)).toLong + startPoint(1)))
+              })
+            }
+            else {
               val d = ds.dimension
               val blockSizeX = math.sqrt(size * d(0) / d(1))
               val blockSizeY = math.sqrt(size * d(1) / d(0))
@@ -150,8 +175,9 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
               val matrixY = (Math.ceil(d(1) / blockSizeY)).toInt
               // Creates bounded scans on the blocks with their corresponding
               // indices to cover the entire matrix
-              (0L until (matrixX * matrixY).toLong).map(i => BoundedMDScan(ds, 0, blockSize, Array[Long]((i % matrixX *
-                blockSize(0)).toLong + startPoint(0), (i / matrixX * blockSize(1)).toLong + startPoint(1))))
+              (0L until (matrixX * matrixY).toLong).map(x => BoundedMDScan(ds, 0, blockSize, Array[Long]((x % matrixX *
+                blockSize(0)).toLong + startPoint(0), (x / matrixX * blockSize(1)).toLong + startPoint(1))))
+
             }
           }
 
