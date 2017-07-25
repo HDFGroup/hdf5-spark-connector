@@ -26,14 +26,7 @@ class DatatypeTests extends FunTestSuite {
   test("Reading int8") {
     val df = sqlContext.read.hdf5(h5file, int8test)
 
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
-        StructField("value", ByteType, nullable = false)
-      )
-    )
-    assert(df.schema === expectedSchema)
+    assert(df.schema === makeSchema(ByteType))
 
     val expected = Row(0L, Byte.MinValue) +:
       (1L until 9L).map { x => Row(x, (x - 2).toByte) } :+
@@ -45,14 +38,7 @@ class DatatypeTests extends FunTestSuite {
   test("Reading int16") {
     val df = sqlContext.read.hdf5(h5file, int16test)
 
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
-        StructField("value", ShortType, nullable = false)
-      )
-    )
-    assert(df.schema === expectedSchema)
+    assert(df.schema === makeSchema(ShortType))
 
     val expected = Row(0L, Short.MinValue) +:
       (1L until 9L).map { x => Row(x, (x - 2).toShort) } :+
@@ -64,14 +50,7 @@ class DatatypeTests extends FunTestSuite {
   test("Reading int32") {
     val df = sqlContext.read.hdf5(h5file, int32test)
 
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
-        StructField("value", IntegerType, nullable = false)
-      )
-    )
-    assert(df.schema === expectedSchema)
+    assert(df.schema === makeSchema(IntegerType))
 
     val expected = Row(0L, Int.MinValue) +:
       (1L until 9L).map { x => Row(x, (x - 2).toInt) } :+
@@ -83,14 +62,7 @@ class DatatypeTests extends FunTestSuite {
   test("Reading int64") {
     val df = sqlContext.read.hdf5(h5file, int64test)
 
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
-        StructField("value", LongType, nullable = false)
-      )
-    )
-    assert(df.schema === expectedSchema)
+    assert(df.schema === makeSchema(LongType))
 
     val expected = Row(0L, Long.MinValue) +:
       (1L until 9L).map { x => Row(x, x - 2) } :+
@@ -104,14 +76,7 @@ class DatatypeTests extends FunTestSuite {
   test("Reading uint8") {
     val df = sqlContext.read.hdf5(h5file, uint8test)
 
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
-        StructField("value", ShortType, nullable = false)
-      )
-    )
-    assert(df.schema === expectedSchema)
+    assert(df.schema === makeSchema(ShortType))
 
     val expected = (0L until 9L).map { x => Row(x, x.toShort) } :+ Row(9L, 255)
 
@@ -121,14 +86,7 @@ class DatatypeTests extends FunTestSuite {
   test("Reading uint16") {
     val df = sqlContext.read.hdf5(h5file, uint16test)
 
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
-        StructField("value", IntegerType, nullable = false)
-      )
-    )
-    assert(df.schema === expectedSchema)
+    assert(df.schema === makeSchema(IntegerType))
 
     val expected = (0L until 9L).map { x => Row(x, x.toInt) } :+ Row(9L, 65535)
 
@@ -138,14 +96,7 @@ class DatatypeTests extends FunTestSuite {
   test("Reading uint32") {
     val df = sqlContext.read.hdf5(h5file, uint32test)
 
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
-        StructField("value", LongType, nullable = false)
-      )
-    )
-    assert(df.schema === expectedSchema)
+    assert(df.schema === makeSchema(LongType))
 
     val expected = (0L until 9L).map { x => Row(x, x) } :+ Row(9L, 4294967295L)
 
@@ -157,15 +108,8 @@ class DatatypeTests extends FunTestSuite {
   test("Reading float32") {
     val df = sqlContext.read.hdf5(h5file, float32test)
 
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
-        StructField("value", FloatType, nullable = false)
-      )
-    )
-    assert(df.schema === expectedSchema)
-
+    assert(df.schema === makeSchema(FloatType))
+    
     val expected = (0 until 10).map(x => x % 2 match {
       case 0 => Row(x, (0.2 * x).toFloat)
       case 1 => Row(x, (-0.2 * x).toFloat)
@@ -177,14 +121,7 @@ class DatatypeTests extends FunTestSuite {
   test("Reading float64") {
     val df = sqlContext.read.hdf5(h5file, float64test)
 
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
-        StructField("value", DoubleType, nullable = false)
-      )
-    )
-    assert(df.schema === expectedSchema)
+    assert(df.schema === makeSchema(DoubleType))
 
     val expected = (0 until 10).map(x => x % 2 match {
       case 0 => Row(x, (2 * x).toDouble / 10)
@@ -199,14 +136,7 @@ class DatatypeTests extends FunTestSuite {
     val alpha = "abcdefghijklmnopqrstuvwxyz"
     val df = sqlContext.read.hdf5(h5file, dataset)
 
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
-        StructField("value", StringType, nullable = false)
-      )
-    )
-    assert(df.schema === expectedSchema)
+    assert(df.schema === makeSchema(StringType))
 
     val expected = (0 until 10).map { x => Row(x, alpha.substring(0, 0 + x)) }
 
@@ -214,4 +144,3 @@ class DatatypeTests extends FunTestSuite {
   }
 
 }
-

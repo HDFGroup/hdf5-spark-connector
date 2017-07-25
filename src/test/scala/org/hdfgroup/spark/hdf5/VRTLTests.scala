@@ -2,7 +2,7 @@ package org.hdfgroup.spark.hdf5
 
 import org.apache.commons.io.FilenameUtils
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.functions.{ min, max }
+import org.apache.spark.sql.functions.{ min, max, sum }
 import org.apache.spark.sql.types._
 
 class VRTLTests extends FunTestSuite {
@@ -11,70 +11,42 @@ class VRTLTests extends FunTestSuite {
     getClass.getResource("test1.h5").getPath)
 
   test("Reading sparky://files : single file") {
-    val df = sqlContext.read.hdf5(h5dir, "sparky://files")
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("fileName", StringType, nullable = false),
-        StructField("file size", LongType, nullable = false)))
-    assert(df.schema === expectedSchema)
+    val df = sqlContext.read.hdf5(h5dir, vrtlFiles)
 
-    val value = df.agg(max(df.columns(2))).head
+    assert(df.schema === makeSchema(vrtlFiles))
+
+    val value = df.agg(max(df("file size"))).head
     val expected = Row(106671208.toLong)
+
     checkRowsEqual(value, expected)
   }
 
   test("Reading sparky://files : multiple files") {
-    val df = sqlContext.read.hdf5(h5dir, "sparky://files")
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("fileName", StringType, nullable = false),
-        StructField("file size", LongType, nullable = false)))
-    assert(df.schema === expectedSchema)
+    val df = sqlContext.read.hdf5(h5dir, vrtlFiles)
 
-    val sortedVals = df.drop("fileID").drop("fileName").sort("file size").collect()
-    val expected = Array(
-      Row(1440L),
-      Row(1440L),
-      Row(1440L),
-      Row(1440L),
-      Row(23722L),
-      Row(23722L),
-      Row(16631632L),
-      Row(106671208L))
-    assert(sortedVals === expected)
+    assert(df.schema === makeSchema(vrtlFiles))
+
+    val totalSize = df.agg(sum(df("file size"))).head
+    val expected = Row(123356044L)
+    checkRowsEqual(totalSize, expected)
   }
-/*
+
   test("Reading sparky://datasets : single file") {
-    val df = sqlContext.read.hdf5(h5dir, "sparky://datasets")
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("dataset name", StringType, nullable = false),
-        StructField("element type", StringType, nullable = false),
-        StructField("dimensions", ArrayType(LongType), nullable = false),
-        StructField("number of elements", LongType, nullable = false)))
-    assert(df.schema === expectedSchema)
+    val df = sqlContext.read.hdf5(h5dir, vrtlDatasets)
 
-    val sortedVals = df.drop("fileID").drop("dataset name").drop("element type")
-      .drop("dimensions").sort("number of elements").collect()
-    val expected = Array(Row(0L), Row(1036800L), Row(1036800L), Row(1036800L), Row(1036800L))
-    assert(sortedVals === expected)
+    assert(df.schema === makeSchema(vrtlDatasets))
+
+    val totalCount = df.agg(sum(df("number of elements"))).head
+    val expected = Row(69919900L)
+    checkRowsEqual(totalCount, expected)
   }
- */
-  test("Reading sparky://datasets : multiple files") {
-    val df = sqlContext.read.hdf5(h5dir, "sparky://datasets")
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("dataset name", StringType, nullable = false),
-        StructField("element type", StringType, nullable = false),
-        StructField("dimensions", ArrayType(LongType), nullable = false),
-        StructField("number of elements", LongType, nullable = false)))
-    assert(df.schema === expectedSchema)
 
-    val maxValue = df.agg(max(df.columns(4))).head
+  test("Reading sparky://datasets : multiple files") {
+    val df = sqlContext.read.hdf5(h5dir, vrtlDatasets)
+
+    assert(df.schema === makeSchema(vrtlDatasets))
+
+    val maxValue = df.agg(max(df("number of elements"))).head
     val expected = Row(7560000L)
     checkRowsEqual(maxValue, expected)
 
@@ -88,15 +60,9 @@ class VRTLTests extends FunTestSuite {
   }
 
   test("Reading sparky://attributes : single file") {
-    val df = sqlContext.read.hdf5(h5dir, "sparky://attributes")
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("object path", StringType, nullable = false),
-        StructField("attribute name", StringType, nullable = false),
-        StructField("element type", StringType, nullable = false),
-        StructField("dimensions", ArrayType(LongType), nullable = false)))
-    assert(df.schema === expectedSchema)
+    val df = sqlContext.read.hdf5(h5dir, vrtlAttributes)
+
+    assert(df.schema === makeSchema(vrtlAttributes))
 
     val sortedVals = df.drop("fileID").drop("object path").drop("attribute name")
       .drop("dimensions").sort("element type").head()
@@ -105,15 +71,9 @@ class VRTLTests extends FunTestSuite {
   }
 
   test("Reading sparky://attributes : multiple files") {
-    val df = sqlContext.read.hdf5(h5dir, "sparky://attributes")
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("object path", StringType, nullable = false),
-        StructField("attribute name", StringType, nullable = false),
-        StructField("element type", StringType, nullable = false),
-        StructField("dimensions", ArrayType(LongType), nullable = false)))
-    assert(df.schema === expectedSchema)
+    val df = sqlContext.read.hdf5(h5dir, vrtlAttributes)
+
+    assert(df.schema === makeSchema(vrtlAttributes))
 
     val sortedVals = df.drop("fileID").drop("object path").drop("element type")
       .drop("dimensions").sort("attribute name").head()
