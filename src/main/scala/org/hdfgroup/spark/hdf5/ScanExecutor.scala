@@ -15,12 +15,9 @@ object ScanExecutor {
     val dataset: ArrayVar[_]
     val ioSize: Int
   }
-  case class UnboundedScan(dataset: ArrayVar[_], ioSize: Int) extends ScanItem
-  case class BoundedScan(dataset: ArrayVar[_], ioSize: Int, blockNumber: Long = 0) extends ScanItem
-  case class BoundedMDScan(dataset: ArrayVar[_], ioSize: Int, blockDimensions: Array[Int], offset: Array[Long]) extends ScanItem
-  case class PrunedUnboundedScan(dataset: ArrayVar[_], ioSize: Int, requiredColumns: Array[String]) extends ScanItem
-  case class PrunedBoundedScan(dataset: ArrayVar[_], ioSize: Int, blockNumber: Long = 0, requiredColumns: Array[String]) extends ScanItem
-  case class PrunedBoundedMDScan(dataset: ArrayVar[_], ioSize: Int, blockDimensions: Array[Int], offset: Array[Long], requiredColumns: Array[String]) extends ScanItem
+  case class UnboundedScan(dataset: ArrayVar[_], ioSize: Int, cols: Array[String]) extends ScanItem
+  case class BoundedScan(dataset: ArrayVar[_], ioSize: Int, blockNumber: Long = 0, cols: Array[String]) extends ScanItem
+  case class BoundedMDScan(dataset: ArrayVar[_], ioSize: Int, blockDimensions: Array[Int], offset: Array[Long], cols: Array[String]) extends ScanItem
 }
 
 class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
@@ -31,116 +28,109 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
     log.trace("{}", Array[AnyRef](scanItem))
 
     scanItem match {
-      case UnboundedScan(dataset, _) => dataset.path match {
-        case "sparky://files" =>
-          Seq(Row(dataset.fileID, dataset.fileName, dataset.realSize))
-
-        case "sparky://datasets" =>
-          val typeInfo = dataset.contains.toString
-          Seq(Row(dataset.fileID, dataset.realPath,
-            typeInfo.substring(0, typeInfo.indexOf('(')),
-            dataset.dimension, dataset.realSize))
-
-        case "sparky://attributes" =>
-          val typeInfo = dataset.contains.toString
-          Seq(Row(dataset.fileID, dataset.realPath, dataset.attribute,
-            typeInfo.substring(0, typeInfo.indexOf('(')),
-            dataset.dimension))
-
-        case _ => {
-          val dataReader = newDatasetReader(dataset)(_.readDataset())
-          dataReader.zipWithIndex.map {
-            case (x, index) =>
-              Row(fileID, index.toLong, x)
-          }
-        }
-      }
-
-      case BoundedScan(dataset, ioSize, offset) => {
-        val dataReader = newDatasetReader(dataset)(_.readDataset(ioSize, offset))
-        dataReader.zipWithIndex.map {
-          case (x, index) => Row(fileID, offset + index.toLong, x)
-        }
-      }
-
-      case BoundedMDScan(dataset, ioSize, blockDimensions, offset) => {
-        // Calculations to correctly map the index of each datapoint in
-        // respect to the overall linearized matrix.
-        val dataReader = newDatasetReader(dataset)(_.readDataset(blockDimensions, offset))
-        val d = dataset.dimension
-        val edgeBlockY =
-          if ((offset(1) / blockDimensions(1)) < ((Math.floor(d(1) / blockDimensions(1))).toInt))
-            blockDimensions(1)
-          else
-            d(1) % offset(1)
-        val blockFill = offset(0) * d(1)
-        dataReader.zipWithIndex.map {
-          case (x, index) =>
-            Row(fileID, blockFill + (index - index % edgeBlockY) / edgeBlockY
-              * d(1) + index % edgeBlockY + offset(1), x)
-        }
-      }
-
-      case PrunedUnboundedScan(dataset, _, cols) => dataset.path match {
+      case UnboundedScan(dataset, _, cols) => dataset.path match {
         case "sparky://files" => {
-          var listRows = List[Any]()
-          for (col <- cols) {
-            if (col == "fileID")
-              listRows = listRows :+ dataset.fileID
-            else if (col == "fileName")
-              listRows = listRows :+ dataset.fileName
-            else if (col == "file size")
-              listRows = listRows :+ dataset.realSize
+          if (cols.length == 0)
+            Seq(Row(dataset.fileID, dataset.fileName, dataset.realSize))
+          else {
+            var listRows = List[Any]()
+            for (col <- cols) {
+              if (col == "fileID")
+                listRows = listRows :+ dataset.fileID
+              else if (col == "fileName")
+                listRows = listRows :+ dataset.fileName
+              else if (col == "file size")
+                listRows = listRows :+ dataset.realSize
+            }
+            Seq(Row.fromSeq(listRows))
           }
-          Seq(Row.fromSeq(listRows))
         }
 
         case "sparky://datasets" => {
-          var listRows = List[Any]()
           val typeInfo = dataset.contains.toString
-          for (col <- cols) {
-            if (col == "fileID")
-              listRows = listRows :+ dataset.fileID
-            else if (col == "dataset name")
-              listRows = listRows :+ dataset.realPath
-            else if (col == "element type")
-              listRows = listRows :+ typeInfo.substring(0, typeInfo.indexOf('('))
-            else if (col == "dimensions")
-              listRows = listRows :+ dataset.dimension
-            else if (col == "number of elements")
-              listRows = listRows :+ dataset.realSize
+          if (cols.length == 0)
+            Seq(Row(dataset.fileID, dataset.realPath,
+              typeInfo.substring(0, typeInfo.indexOf('(')),
+              dataset.dimension, dataset.realSize))
+          else {
+            var listRows = List[Any]()
+            for (col <- cols) {
+              if (col == "fileID")
+                listRows = listRows :+ dataset.fileID
+              else if (col == "dataset name")
+                listRows = listRows :+ dataset.realPath
+              else if (col == "element type")
+                listRows = listRows :+ typeInfo.substring(0, typeInfo.indexOf('('))
+              else if (col == "dimensions")
+                listRows = listRows :+ dataset.dimension
+              else if (col == "number of elements")
+                listRows = listRows :+ dataset.realSize
+            }
+            Seq(Row.fromSeq(listRows))
           }
-          Seq(Row.fromSeq(listRows))
         }
 
         case "sparky://attributes" => {
-          var listRows = List[Any]()
           val typeInfo = dataset.contains.toString
-          for (col <- cols) {
-            if (col == "fileID")
-              listRows = listRows :+ dataset.fileID
-            else if (col == "object path")
-              listRows = listRows :+ dataset.realPath
-            else if (col == "attribute name")
-              listRows = listRows :+ dataset.attribute
-            else if (col == "element type")
-              listRows = listRows :+ typeInfo.substring(0, typeInfo.indexOf('('))
-            else if (col == "dimensions")
-              listRows = listRows :+ dataset.dimension
+          if (cols.length == 0)
+            Seq(Row(dataset.fileID, dataset.realPath, dataset.attribute,
+              typeInfo.substring(0, typeInfo.indexOf('(')),
+              dataset.dimension))
+          else {
+            var listRows = List[Any]()
+            val typeInfo = dataset.contains.toString
+            for (col <- cols) {
+              if (col == "fileID")
+                listRows = listRows :+ dataset.fileID
+              else if (col == "object path")
+                listRows = listRows :+ dataset.realPath
+              else if (col == "attribute name")
+                listRows = listRows :+ dataset.attribute
+              else if (col == "element type")
+                listRows = listRows :+ typeInfo.substring(0, typeInfo.indexOf('('))
+              else if (col == "dimensions")
+                listRows = listRows :+ dataset.dimension
+            }
+            Seq(Row.fromSeq(listRows))
           }
-          Seq(Row.fromSeq(listRows))
         }
 
         case _ => {
           val dataReader = newDatasetReader(dataset)(_.readDataset())
           dataReader.zipWithIndex.map {
             case (x, index) => {
+              if (cols.length == 0)
+                Row(fileID, index.toLong, x)
+              else {
+                  var listRows = List[Any]()
+                  for (col <- cols) {
+                    if (col == "fileID")
+                      listRows = listRows :+ fileID
+                    else if (col == "index0")
+                      listRows = listRows :+ index.toLong
+                    else if (col == "value")
+                      listRows = listRows :+ x
+                  }
+                  Row.fromSeq(listRows)
+                }
+              }
+            }
+          }
+        }
+
+      case BoundedScan(dataset, ioSize, offset, cols) => {
+        val dataReader = newDatasetReader(dataset)(_.readDataset(ioSize, offset))
+        dataReader.zipWithIndex.map {
+          case (x, index) => {
+            if (cols.length == 0)
+              Row(fileID, offset + index.toLong, x)
+            else {
               var listRows = List[Any]()
               for (col <- cols) {
                 if (col == "fileID")
                   listRows = listRows :+ fileID
                 else if (col == "index0")
-                  listRows = listRows :+ index.toLong
+                  listRows = listRows :+ offset + index.toLong
                 else if (col == "value")
                   listRows = listRows :+ x
               }
@@ -150,25 +140,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
         }
       }
 
-      case PrunedBoundedScan(dataset, ioSize, offset, cols) => {
-        val dataReader = newDatasetReader(dataset)(_.readDataset(ioSize, offset))
-        dataReader.zipWithIndex.map {
-          case (x, index) => {
-            var listRows = List[Any]()
-            for (col <- cols) {
-              if (col == "fileID")
-                listRows = listRows :+ fileID
-              else if (col == "index0")
-                listRows = listRows :+ offset + index.toLong
-              else if (col == "value")
-                listRows = listRows :+ x
-            }
-            Row.fromSeq(listRows)
-          }
-        }
-      }
-
-      case PrunedBoundedMDScan(dataset, ioSize, blockDimensions, offset, cols) => {
+      case BoundedMDScan(dataset, ioSize, blockDimensions, offset, cols) => {
         // Calculations to correctly map the index of each datapoint in
         // respect to the overall linearized matrix.
         val dataReader = newDatasetReader(dataset)(_.readDataset(blockDimensions, offset))
@@ -181,17 +153,22 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
         val blockFill = offset(0) * d(1)
         dataReader.zipWithIndex.map {
           case (x, index) => {
-            var listRows = List[Any]()
-            for (col <- cols) {
-              if (col == "fileID")
-                listRows = listRows :+ fileID
-              else if (col == "index0")
-                listRows = listRows :+ (blockFill + (index - index % edgeBlockY) / edgeBlockY
-                  * d(1) + index % edgeBlockY + offset(1))
-              else if (col == "value")
-                listRows = listRows :+ x
+            if (cols.length == 0)
+              Row(fileID, blockFill + (index - index % edgeBlockY) / edgeBlockY
+                * d(1) + index % edgeBlockY + offset(1), x)
+            else {
+              var listRows = List[Any]()
+              for (col <- cols) {
+                if (col == "fileID")
+                  listRows = listRows :+ fileID
+                else if (col == "index0")
+                  listRows = listRows :+ (blockFill + (index - index % edgeBlockY) / edgeBlockY
+                    * d(1) + index % edgeBlockY + offset(1))
+                else if (col == "value")
+                  listRows = listRows :+ x
+              }
+              Row.fromSeq(listRows)
             }
-            Row.fromSeq(listRows)
           }
         }
       }
