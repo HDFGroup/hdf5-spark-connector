@@ -11,7 +11,7 @@ import org.apache.spark.sql.functions._
 val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
 val dirName = "/mnt/wrk/hdftest/GSSTF_NCEP.3/2000"
-val pathName = "/Users/Alan/IdeaProjects/sparky/examples/GSSTF_NCEP_mini"
+val pathName = "/Users/Alan/IdeaProjects/5parky/examples/GSSTF_NCEP_mini"
 val varName = "/HDFEOS/GRIDS/NCEP/Data Fields/Tair_2m"
 
 val df = sqlContext.read.
