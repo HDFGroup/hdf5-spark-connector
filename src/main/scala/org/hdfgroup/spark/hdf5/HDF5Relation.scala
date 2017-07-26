@@ -73,7 +73,7 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
         case (id, name) => {
           val reader = new HDF5Reader(new File(name), id)
           val nodes = reader.nodes.flatten()
-          reader.close( )
+          reader.close()
           nodes collect {
             case y: ArrayVar[_] => new ArrayVar(name, id, dataset,
               y.contains, y.dimension, 1, y.path, y.size, null)
@@ -114,79 +114,7 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
   override def buildScan(): RDD[Row] = {
     log.trace("buildScan(): RDD[Row]")
 
-    val hasStart = start(0) != -1
-    val hasBlock = block(0) != -1
-    val none = Array[String]()
-
-    val scans = datasets.map { UnboundedScan(_, chunkSize, none) }
-    val splitScans = scans.flatMap {
-      case UnboundedScan(ds, size, none) if (ds.size > size || hasStart || hasBlock) =>
-        ds.dimension.length match {
-          case 1 => {
-            val startPoint =
-              if (hasStart && start.length == 1) start(0)
-              else 0L
-
-            if (hasBlock && block.length == 1 && block(0) <= size) {
-              Seq(BoundedScan(ds, block(0), startPoint, none))
-            } else if (hasBlock && block.length == 1) {
-              (0L until Math.ceil(block(0).toFloat / size).toLong).map(x => {
-                if ((x+1)*size < block(0)) BoundedScan(ds, size, x * size + startPoint, none)
-                else BoundedScan(ds, block(0) % (x.toInt*size), x * size + startPoint, none)
-              })
-            } else {
-              (0L until Math.ceil(ds.size.toFloat / size).toLong).map(x =>
-                BoundedScan(ds, size, x * size + startPoint, none))
-            }
-          }
-          case 2 => {
-            val startPoint =
-              if (hasStart && start.length == 2) start
-              else Array(0L, 0L)
-
-            if (hasBlock && block.length == 2 && block(0)*block(1) <= size) {
-              Seq(BoundedMDScan(ds, 0, block, startPoint, none))
-            } else if (hasBlock && block.length == 2) {
-              val blockSizeX = math.sqrt(size * block(0) / block(1))
-              val blockSizeY = math.sqrt(size * block(1) / block(0))
-              val blockSize = Array[Int](blockSizeX.toInt, blockSizeY.toInt)
-              val matrixX = (Math.ceil(block(0) / blockSizeX)).toInt
-              val matrixY = (Math.ceil(block(1) / blockSizeY)).toInt
-              (0 until (matrixX * matrixY)).map(x => {
-                BoundedMDScan(ds, 0, Array[Int](
-                  if ((x % matrixX + 1) * blockSize(0) > block(0)) {
-                    (block(0) % (x % matrixX * blockSize(0)))
-                  } else blockSize(0) ,
-                  if ((x / matrixY + 1) * blockSize(1) > block(1)){
-                    (block(1) % (x / matrixY * blockSize(1)))
-                  } else blockSize(1)
-                ), Array[Long]((x % matrixX * blockSize(0)).toLong
-                  + startPoint(0), (x / matrixX * blockSize(1)).toLong + startPoint(1)), none)
-              })
-            }
-            else {
-              val d = ds.dimension
-              val blockSizeX = math.sqrt(size * d(0) / d(1))
-              val blockSizeY = math.sqrt(size * d(1) / d(0))
-              val blockSize = Array[Int](blockSizeX.toInt, blockSizeY.toInt)
-              // Creates block dimensions roughly proportional to the
-              // matrix's dimensions and roughly equivalent to the window size.
-              val matrixX = (Math.ceil(d(0) / blockSizeX)).toInt
-              val matrixY = (Math.ceil(d(1) / blockSizeY)).toInt
-              // Creates bounded scans on the blocks with their corresponding
-              // indices to cover the entire matrix
-              (0L until (matrixX * matrixY).toLong).map(x => BoundedMDScan(ds, 0, blockSize, Array[Long]((x % matrixX *
-                blockSize(0)).toLong + startPoint(0), (x / matrixX * blockSize(1)).toLong + startPoint(1)), none))
-
-            }
-          }
-          case _ => throw new SparkException("Unsupported dataset rank!")
-        }
-      case x: UnboundedScan => Seq(x)
-    }
-    sqlContext.sparkContext.parallelize(splitScans).flatMap { item =>
-      new ScanExecutor(item.dataset.fileName, item.dataset.fileID).execQuery(item)
-    }
+    buildScan(Array[String]())
   }
 
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
