@@ -158,8 +158,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
             if (hasID) indexed.map { x => {
               if (col(0) == "fileID") Row(fileID, offset + x.toLong)
               else Row(offset + x.toLong, fileID)
-            }
-            }
+            }}
             else indexed.map { x => Row(offset + x.toLong) }
           } else {
             if (hasID) Seq(Row(fileID))
@@ -169,96 +168,69 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
       }
 
       case BoundedMDScan(dataset, ioSize, blockDimensions, offset, cols) => {
-        // Calculations to correctly map the index of each datapoint in
-        // respect to the overall linearized matrix.
-        val dataReader = newDatasetReader(dataset)(_.readDataset(blockDimensions, offset))
+        val col =
+          if (cols.length == 0) Array[String]("value", "index0", "fileID")
+          else cols
+        val hasValue = col contains "value"
+        val hasIndex = col contains "index0"
+        val hasID = col contains "fileID"
         val d = dataset.dimension
+        val edgeBlockX =
+          if ((offset(0) / blockDimensions(0)) < ((Math.floor(d(0) / blockDimensions(0))).toInt))
+            blockDimensions(0)
+          else
+            d(0) % offset(0)
         val edgeBlockY =
           if ((offset(1) / blockDimensions(1)) < ((Math.floor(d(1) / blockDimensions(1))).toInt))
             blockDimensions(1)
           else
             d(1) % offset(1)
         val blockFill = offset(0) * d(1)
-        dataReader.zipWithIndex.map {
-          case (x, index) => {
-            if (cols.length == 0)
-              Row(fileID, blockFill + (index - index % edgeBlockY) / edgeBlockY
-                * d(1) + index % edgeBlockY + offset(1), x)
-            else {
-              var listRows = List[Any]()
-              for (col <- cols) {
-                if (col == "fileID")
-                  listRows = listRows :+ fileID
-                else if (col == "index0")
-                  listRows = listRows :+ (blockFill + (index - index % edgeBlockY) / edgeBlockY
-                    * d(1) + index % edgeBlockY + offset(1))
-                else if (col == "value")
-                  listRows = listRows :+ x
-              }
-              Row.fromSeq(listRows)
+        if (hasValue) {
+          // Calculations to correctly map the index of each datapoint in
+          // respect to the overall linearized matrix.
+          val dataReader = newDatasetReader(dataset)(_.readDataset(blockDimensions, offset))
+          if (hasIndex) {
+            val indexed = dataReader.zipWithIndex
+            if (hasID) indexed.map { case (x, index) => Row(fileID, blockFill + (index - index % edgeBlockY)
+              / edgeBlockY * d(1) + index % edgeBlockY + offset(1), x)
             }
+            else {
+              indexed.map { case (x, index) => {
+                val globalIndex = blockFill + (index - index % edgeBlockY) / edgeBlockY * d (1) + index % edgeBlockY + offset(1)
+                if (col(0) == "index0") Row(globalIndex, x)
+                else Row(x, globalIndex)
+              }
+              }
+            }
+          } else {
+            if (hasID) dataReader.map { x => {
+              if (col(0) == "fileID") Row(fileID, x)
+              else Row(x, fileID)
+            }
+            }
+            else dataReader.map { x => Row(x) }
+          }
+        } else {
+          if (hasIndex) {
+            val indexed = (0L until edgeBlockX * edgeBlockY.toLong)
+            if (hasID) indexed.map { x => {
+              val globalIndex = blockFill + (x - x % edgeBlockY) / edgeBlockY * d (1) + x % edgeBlockY + offset(1)
+              if (col(0) == "fileID") Row(fileID, globalIndex)
+              else Row(globalIndex, fileID)
+            }
+            }
+            else {
+              indexed.map { x => Row(blockFill + (x - x % edgeBlockY) / edgeBlockY * d (1) + x % edgeBlockY + offset(1)) }
+            }
+          } else {
+            if (hasID) Seq(Row(fileID))
+            else Seq(Row())
           }
         }
       }
     }
   }
-  /*case BoundedMDScan(dataset, ioSize, blockDimensions, offset, cols) => {
-    val col =
-      if (cols.length == 0) Array[String]("value", "index0", "fileID")
-      else cols
-    val hasValue = col contains "value"
-    val hasIndex = col contains "index0"
-    val hasID = col contains "fileID"
-    val d = dataset.dimension
-    val edgeBlockY =
-      if ((offset(1) / blockDimensions(1)) < ((Math.floor(d(1) / blockDimensions(1))).toInt))
-        blockDimensions(1)
-      else
-        d(1) % offset(1)
-    val blockFill = offset(0) * d(1)
-    if (hasValue) {
-      // Calculations to correctly map the index of each datapoint in
-      // respect to the overall linearized matrix.
-      val dataReader = newDatasetReader(dataset)(_.readDataset(blockDimensions, offset))
-      if (hasIndex) {
-        val indexed = dataReader.zipWithIndex
-        if (hasID) indexed.map { case (x, index) => Row(fileID, blockFill + (index - index % edgeBlockY)
-          / edgeBlockY * d(1) + index % edgeBlockY + offset(1), x)
-        }
-        else {
-          indexed.map { case (x, index) => {
-            val globalIndex = blockFill + (index - index % edgeBlockY) / edgeBlockY * d (1) + index % edgeBlockY + offset(1)
-            if (col(0) == "index0") Row(globalIndex, x)
-            else Row(x, globalIndex)
-          }
-          }
-        }
-      } else {
-        if (hasID) dataReader.map { x => {
-          if (col(0) == "fileID") Row(fileID, x)
-          else Row(x, fileID)
-        }
-        }
-        else dataReader.map { x => Row(x) }
-      }
-    } else {
-      if (hasIndex) {
-        val indexed = (0 until blockDimensions(0) * blockDimensions(1))
-        if (hasID) indexed.map { x => {
-          val globalIndex = blockFill + (x - x % edgeBlockY) / edgeBlockY * d (1) + x % edgeBlockY + offset(1)
-          if (col(0) == "fileID") Row(fileID, globalIndex)
-          else Row(globalIndex, fileID)
-        }
-        }
-        else indexed.map { x => Row(blockFill + (x - x % edgeBlockY) / edgeBlockY * d (1) + x % edgeBlockY + offset(1)) }
-      } else {
-        if (hasID) Seq(Row(fileID))
-        else Seq(Row())
-      }
-    }
-  }
-}
-}*/
 
   def openReader[T](fun: HDF5Reader => T): T = {
     log.trace("{}", Array[AnyRef](fun))
