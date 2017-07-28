@@ -114,7 +114,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
             }
           } else {
             if (hasIndex) {
-              val indexed = (0 until dataset.size.toInt)
+              val indexed = (0L until dataset.size)
               if (hasID) indexed.map { x => Row(fileID, x) }
               else indexed.map { x => Row(x) }
             } else {
@@ -141,20 +141,18 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
               indexed.map { case (x, index) => {
                 if (col(0) == "index0") Row(offset + index.toLong, x)
                 else Row(x, offset + index.toLong)
-              }
-              }
+              }}
             }
           } else {
             if (hasID) dataReader.map { x => {
               if (col(0) == "fileID") Row(fileID, x)
               else Row(x, fileID)
-            }
-            }
+            }}
             else dataReader.map { x => Row(x) }
           }
         } else {
           if (hasIndex) {
-            val indexed = (0 until dataset.size.toInt)
+            val indexed = (0L until dataset.size)
             if (hasID) indexed.map { x => {
               if (col(0) == "fileID") Row(fileID, offset + x.toLong)
               else Row(offset + x.toLong, fileID)
@@ -197,11 +195,10 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
             }
             else {
               indexed.map { case (x, index) => {
-                val globalIndex = blockFill + (index - index % edgeBlockY) / edgeBlockY * d (1) + index % edgeBlockY + offset(1)
+                val globalIndex = blockFill + (index - index % edgeBlockY) / edgeBlockY * d(1) + index % edgeBlockY + offset(1)
                 if (col(0) == "index0") Row(globalIndex, x)
                 else Row(x, globalIndex)
-              }
-              }
+              }}
             }
           } else {
             if (hasID) dataReader.map { x => {
@@ -215,13 +212,12 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
           if (hasIndex) {
             val indexed = (0L until edgeBlockX * edgeBlockY.toLong)
             if (hasID) indexed.map { x => {
-              val globalIndex = blockFill + (x - x % edgeBlockY) / edgeBlockY * d (1) + x % edgeBlockY + offset(1)
+              val globalIndex = blockFill + (x - x % edgeBlockY) / edgeBlockY * d(1) + x % edgeBlockY + offset(1)
               if (col(0) == "fileID") Row(fileID, globalIndex)
               else Row(globalIndex, fileID)
-            }
-            }
+            }}
             else {
-              indexed.map { x => Row(blockFill + (x - x % edgeBlockY) / edgeBlockY * d (1) + x % edgeBlockY + offset(1)) }
+              indexed.map { x => Row(blockFill + (x - x % edgeBlockY) / edgeBlockY * d(1) + x % edgeBlockY + offset(1)) }
             }
           } else {
             if (hasID) Seq(Row(fileID))
