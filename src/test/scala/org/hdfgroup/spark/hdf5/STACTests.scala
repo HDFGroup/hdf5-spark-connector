@@ -22,12 +22,7 @@ class STACTests extends FunTestSuite {
   test("Get the year high bid") {
     val biddf = sqlContext.read.hdf5(stm3file, bidtest)
 
-    val expectedSchema = StructType(
-      Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
-        StructField("value", FloatType, nullable = false)))
-    assert(biddf.schema === expectedSchema)
+    assert(biddf.schema === makeSchema(FloatType))
 
     val bid = biddf.agg(max(biddf("value"))).head
     val expected = Row(19.999998f)
@@ -36,7 +31,7 @@ class STACTests extends FunTestSuite {
 
   test("Get the last quarter high bid") {
     val biddf = sqlContext.read.hdf5(stm3file, bidtest)
-    val qtrdf = biddf.where(biddf("index0") >= qtroffset)
+    val qtrdf = biddf.where(biddf("index") >= qtroffset)
     val bid = qtrdf.agg(max(qtrdf("value"))).head
     val expected = Row(19.99998f)
     checkRowsEqual(bid, expected)
@@ -44,7 +39,7 @@ class STACTests extends FunTestSuite {
 
   test("Get the last month's high bid") {
     val biddf = sqlContext.read.hdf5(stm3file, bidtest)
-    val mondf = biddf.where(biddf("index0") >= monoffset)
+    val mondf = biddf.where(biddf("index") >= monoffset)
     val bid = mondf.agg(max(mondf("value"))).head
     val expected = Row(19.999973f)
     checkRowsEqual(bid, expected)
@@ -52,7 +47,7 @@ class STACTests extends FunTestSuite {
 
   test("Get the last week's high bid") {
     val biddf = sqlContext.read.hdf5(stm3file, bidtest)
-    val wkdf = biddf.where(biddf("index0") >= wkoffset)
+    val wkdf = biddf.where(biddf("index") >= wkoffset)
     val bid = wkdf.agg(max(wkdf("value"))).head
     val expected = Row(19.999973f)
     checkRowsEqual(bid, expected)

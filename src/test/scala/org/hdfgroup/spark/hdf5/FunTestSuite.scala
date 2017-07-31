@@ -37,7 +37,7 @@ abstract class FunTestSuite extends FunSuite with BeforeAndAfterAll {
     StructType(
       Seq(
         StructField("fileID", IntegerType, nullable = false),
-        StructField("index0", LongType, nullable = false),
+        StructField("index", LongType, nullable = false),
         StructField("value", valueType, nullable = false)))
   }
 

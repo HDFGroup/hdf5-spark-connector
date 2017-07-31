@@ -48,7 +48,7 @@ class InfrastructureTests extends FunTestSuite {
     val df2 = sqlContext.read.option("extension", "he5").hdf5(path, ssttest)
     val expectedSchema = StructType(Seq(
       StructField("fileID", IntegerType, nullable = false),
-      StructField("index0", LongType, nullable = false),
+      StructField("index", LongType, nullable = false),
       StructField("value", FloatType, nullable = false)
     ))
     assert(df.schema === expectedSchema)

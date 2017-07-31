@@ -42,7 +42,7 @@ object SchemaConverter {
       case _ => {
         val columns = StructType(Array(
           StructField("fileID", IntegerType, false),
-          StructField("index0", LongType, false)
+          StructField("index", LongType, false)
         ))
         StructType(columns :+ StructField("value", extractTypes(dataset.contains), false))
         /* For now we linearize everything
