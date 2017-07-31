@@ -24,6 +24,8 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
 
   private val log = LoggerFactory.getLogger(getClass)
 
+  private val dataSchema = Array[String]("fileID", "index0", "value")
+
   def execQuery[T](scanItem: ScanItem): Seq[Row] = {
     log.trace("{}", Array[AnyRef](scanItem))
 
@@ -97,7 +99,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
 
         case _ => {
           val col =
-            if (cols.length == 0) Array[String]("value", "index0", "fileID")
+            if (cols.length == 0) dataSchema
             else cols
           val hasValue = col contains "value"
           val hasIndex = col contains "index0"
@@ -127,7 +129,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
 
       case BoundedScan(dataset, ioSize, offset, cols) => {
         val col =
-          if (cols.length == 0) Array[String]("value", "index0", "fileID")
+          if (cols.length == 0) dataSchema
           else cols
         val hasValue = col contains "value"
         val hasIndex = col contains "index0"
@@ -167,7 +169,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
 
       case BoundedMDScan(dataset, ioSize, blockDimensions, offset, cols) => {
         val col =
-          if (cols.length == 0) Array[String]("value", "index0", "fileID")
+          if (cols.length == 0) dataSchema
           else cols
         val hasValue = col contains "value"
         val hasIndex = col contains "index0"
