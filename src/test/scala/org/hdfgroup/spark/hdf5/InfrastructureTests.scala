@@ -2,8 +2,6 @@ package org.hdfgroup.spark.hdf5
 
 import org.apache.commons.io.FilenameUtils
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.functions.{ min, max }
-import org.apache.spark.sql.types._
 
 class InfrastructureTests extends FunTestSuite {
 
@@ -21,7 +19,7 @@ class InfrastructureTests extends FunTestSuite {
   }
 
   val int8test = "/datatypes/int8"
-  
+
   test("Read files in chunks") {
     val evenchunkeddf = sqlContext.read
       .option("window size", 5.toString)

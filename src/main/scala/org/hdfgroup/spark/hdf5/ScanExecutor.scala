@@ -5,7 +5,7 @@ import java.io.File
 import org.apache.spark.sql.Row
 import org.hdfgroup.spark.hdf5.ScanExecutor._
 import org.hdfgroup.spark.hdf5.reader.HDF5Schema.ArrayVar
-import org.hdfgroup.spark.hdf5.reader.{ DatasetReader, HDF5Reader }
+import org.hdfgroup.spark.hdf5.reader.{DatasetReader, HDF5Reader}
 import org.slf4j.LoggerFactory
 
 import scala.language.existentials
@@ -146,8 +146,8 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
             val indexed = dataReader.zipWithIndex
             if (hasID) indexed.map { case (x, index) => Row(fileID, offset + index.toLong, x) }
             else indexed.map { case (x, index) => {
-                if (col(0) == "index") Row(offset + index.toLong, x)
-                else Row(x, offset + index.toLong)
+              if (col(0) == "index") Row(offset + index.toLong, x)
+              else Row(x, offset + index.toLong)
             }}
           } else {
             if (hasID) dataReader.map { x => {

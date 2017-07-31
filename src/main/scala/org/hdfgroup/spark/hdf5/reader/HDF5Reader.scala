@@ -1,12 +1,12 @@
 package org.hdfgroup.spark.hdf5.reader
 
-import java.io.{ Closeable, File }
+import java.io.{Closeable, File}
 
-import scala.collection.JavaConverters._
-
-import ch.systemsx.cisd.hdf5.{ HDF5DataClass, HDF5DataTypeInformation, HDF5FactoryProvider }
+import ch.systemsx.cisd.hdf5.{HDF5DataClass, HDF5DataTypeInformation, HDF5FactoryProvider}
 import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.slf4j.LoggerFactory
+
+import scala.collection.JavaConverters._
 
 class HDF5Reader(val input: File, val id: Integer) extends Closeable with Serializable {
 

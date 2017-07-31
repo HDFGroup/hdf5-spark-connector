@@ -1,8 +1,7 @@
 package org.hdfgroup.spark.hdf5
 
-import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.apache.spark.sql.types._
-import org.apache.spark.SparkException
+import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.slf4j.LoggerFactory
 
 object SchemaConverter {

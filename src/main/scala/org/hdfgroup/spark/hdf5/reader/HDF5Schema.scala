@@ -1,8 +1,7 @@
 package org.hdfgroup.spark.hdf5.reader
 
-import org.apache.spark.SparkException
-
 import ch.systemsx.cisd.hdf5._
+import org.apache.spark.SparkException
 
 object HDF5Schema {
 

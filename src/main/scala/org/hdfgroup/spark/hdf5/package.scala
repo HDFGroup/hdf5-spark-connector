@@ -14,7 +14,5 @@ package object hdf5 {
         .option("file path", file)
         .option("dataset", dataset)
         .load(file)
-
   }
-
 }

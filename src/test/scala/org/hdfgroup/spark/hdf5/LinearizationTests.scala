@@ -2,7 +2,7 @@ package org.hdfgroup.spark.hdf5
 
 import org.apache.commons.io.FilenameUtils
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.functions.{ min, max }
+import org.apache.spark.sql.functions.{max, min}
 import org.apache.spark.sql.types._
 
 class LinearizationTests extends FunTestSuite {

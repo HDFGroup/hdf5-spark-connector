@@ -4,15 +4,15 @@ import java.io.File
 import java.net.URI
 
 import org.apache.commons.io.FilenameUtils
-import org.apache.hadoop.fs.{ FileStatus, FileSystem, Path }
+import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
 import org.apache.spark.SparkException
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.sources.{ BaseRelation, PrunedScan, TableScan }
+import org.apache.spark.sql.sources.{BaseRelation, PrunedScan, TableScan}
 import org.apache.spark.sql.types.StructType
 import org.hdfgroup.spark.hdf5.ScanExecutor._
 import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
-import org.hdfgroup.spark.hdf5.reader.{ HDF5Reader, HDF5Schema }
+import org.hdfgroup.spark.hdf5.reader.{HDF5Reader, HDF5Schema}
 import org.slf4j.LoggerFactory
 
 class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtension: Array[String],
