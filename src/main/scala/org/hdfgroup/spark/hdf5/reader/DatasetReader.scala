@@ -1,10 +1,9 @@
 package org.hdfgroup.spark.hdf5.reader
 
-import org.apache.spark.SparkException
-import org.slf4j.LoggerFactory
-
 import ch.systemsx.cisd.hdf5.IHDF5Reader
+import org.apache.spark.SparkException
 import org.hdfgroup.spark.hdf5.reader.HDF5Schema.ArrayVar
+import org.slf4j.LoggerFactory
 
 class DatasetReader[T](val reader: IHDF5Reader, val node: ArrayVar[T]) extends Serializable {
 

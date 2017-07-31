@@ -1,7 +1,7 @@
 /*
  Run with:
 
- time spark-shell -i examples/vrtl.scala --jars target/distribution/scala-2.11/5parky_2.11-0.0.1-ALPHA.jar,lib/sis-jhdf5-batteries_included.jar
+ time spark-shell -i examples/vrtl.scala --jars target/scala-2.11/5parky_2.11-0.0.1-ALPHA.jar,lib/sis-jhdf5-batteries_included.jar
 
  **/
 

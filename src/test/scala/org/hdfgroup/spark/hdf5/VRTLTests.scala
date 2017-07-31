@@ -2,8 +2,7 @@ package org.hdfgroup.spark.hdf5
 
 import org.apache.commons.io.FilenameUtils
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.functions.{ min, max, sum }
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.functions.{max, sum}
 
 class VRTLTests extends FunTestSuite {
 

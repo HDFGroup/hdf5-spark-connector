@@ -1,8 +1,7 @@
 package org.hdfgroup.spark.hdf5
 
-import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.apache.spark.sql.types._
-import org.apache.spark.SparkException
+import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.slf4j.LoggerFactory
 
 object SchemaConverter {
@@ -42,7 +41,7 @@ object SchemaConverter {
       case _ => {
         val columns = StructType(Array(
           StructField("fileID", IntegerType, false),
-          StructField("index0", LongType, false)
+          StructField("index", LongType, false)
         ))
         StructType(columns :+ StructField("value", extractTypes(dataset.contains), false))
         /* For now we linearize everything

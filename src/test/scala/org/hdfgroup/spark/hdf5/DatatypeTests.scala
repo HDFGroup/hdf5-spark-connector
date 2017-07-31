@@ -2,7 +2,6 @@ package org.hdfgroup.spark.hdf5
 
 import org.apache.commons.io.FilenameUtils
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.functions.{ min, max }
 import org.apache.spark.sql.types._
 
 class DatatypeTests extends FunTestSuite {
@@ -109,7 +108,7 @@ class DatatypeTests extends FunTestSuite {
     val df = sqlContext.read.hdf5(h5file, float32test)
 
     assert(df.schema === makeSchema(FloatType))
-    
+
     val expected = (0 until 10).map(x => x % 2 match {
       case 0 => Row(x, (0.2 * x).toFloat)
       case 1 => Row(x, (-0.2 * x).toFloat)
