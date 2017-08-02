@@ -26,6 +26,9 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
 
   private val dataSchema = Array[String]("fileID", "index", "value")
 
+  // Returns a sequence of the virtual table rows or the data/index/fileID rows.
+  // The data rows are hard-coded to efficiently read the data.
+  // PrunedScans with two columns must be checked to return the columns in the correct order.
   def execQuery[T](scanItem: ScanItem): Seq[Row] = {
     log.trace("{}", Array[AnyRef](scanItem))
 

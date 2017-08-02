@@ -25,6 +25,7 @@ class DefaultSource extends RelationProvider {
       case None => throw new SparkException("You must provide a path to the dataset")
     }
 
+    // Five options that users can specify for reads
     val extensions = parameters.getOrElse("extension", "h5").split(",").map(_.trim)
     val chunkSize = parameters.getOrElse("window size", "10000").toInt
     val start = parameters.getOrElse("start", "-1").split(",").map(_.toLong)

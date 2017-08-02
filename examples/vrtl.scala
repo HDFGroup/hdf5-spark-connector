@@ -10,13 +10,15 @@ import org.apache.spark.sql.functions._
 
 val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
-val df = sqlContext.read.option("extension", "he5").hdf5("/mnt/wrk/hdftest/GSSTF_NCEP.3/", "sparky://files")
+val files = "/mnt/wrk/hdftest/GSSTF_NCEP.3/"
+
+val df = sqlContext.read.option("extension", "he5").hdf5(files, "sparky://files")
 df.count()
 
-val df = sqlContext.read.option("extension", "he5").hdf5("/mnt/wrk/hdftest/GSSTF_NCEP.3/", "sparky://datasets")
+val df = sqlContext.read.option("extension", "he5").hdf5(files, "sparky://datasets")
 df.count()
 
-val df = sqlContext.read.option("extension", "he5").hdf5("/mnt/wrk/hdftest/GSSTF_NCEP.3/", "sparky://attributes")
+val df = sqlContext.read.option("extension", "he5").hdf5(files, "sparky://attributes")
 df.count()
 
 /*
