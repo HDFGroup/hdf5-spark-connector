@@ -24,31 +24,31 @@ class STACTests extends FunTestSuite {
 
     assert(biddf.schema === makeSchema(FloatType))
 
-    val bid = biddf.agg(max(biddf("value"))).head
+    val bid = biddf.agg(max(biddf("Value"))).head
     val expected = Row(19.999998f)
     checkRowsEqual(bid, expected)
   }
 
   test("Get the last quarter high bid") {
     val biddf = sqlContext.read.hdf5(stm3file, bidtest)
-    val qtrdf = biddf.where(biddf("index") >= qtroffset)
-    val bid = qtrdf.agg(max(qtrdf("value"))).head
+    val qtrdf = biddf.where(biddf("Index") >= qtroffset)
+    val bid = qtrdf.agg(max(qtrdf("Value"))).head
     val expected = Row(19.99998f)
     checkRowsEqual(bid, expected)
   }
 
   test("Get the last month's high bid") {
     val biddf = sqlContext.read.hdf5(stm3file, bidtest)
-    val mondf = biddf.where(biddf("index") >= monoffset)
-    val bid = mondf.agg(max(mondf("value"))).head
+    val mondf = biddf.where(biddf("Index") >= monoffset)
+    val bid = mondf.agg(max(mondf("Value"))).head
     val expected = Row(19.999973f)
     checkRowsEqual(bid, expected)
   }
 
   test("Get the last week's high bid") {
     val biddf = sqlContext.read.hdf5(stm3file, bidtest)
-    val wkdf = biddf.where(biddf("index") >= wkoffset)
-    val bid = wkdf.agg(max(wkdf("value"))).head
+    val wkdf = biddf.where(biddf("Index") >= wkoffset)
+    val bid = wkdf.agg(max(wkdf("Value"))).head
     val expected = Row(19.999973f)
     checkRowsEqual(bid, expected)
   }

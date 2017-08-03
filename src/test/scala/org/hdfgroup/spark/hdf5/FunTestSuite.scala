@@ -36,9 +36,9 @@ abstract class FunTestSuite extends FunSuite with BeforeAndAfterAll {
   def makeSchema(valueType: DataType): StructType = {
     StructType(
       Seq(
-        StructField("fileID", IntegerType, nullable = false),
-        StructField("index", LongType, nullable = false),
-        StructField("value", valueType, nullable = false)))
+        StructField("FileID", IntegerType, nullable = false),
+        StructField("Index", LongType, nullable = false),
+        StructField("Value", valueType, nullable = false)))
   }
 
   def makeSchema(vrtlPath: String): StructType = {
@@ -46,25 +46,25 @@ abstract class FunTestSuite extends FunSuite with BeforeAndAfterAll {
       case "sparky://attributes" =>
         StructType(
           Seq(
-            StructField("fileID", IntegerType, nullable = false),
-            StructField("object path", StringType, nullable = false),
-            StructField("attribute name", StringType, nullable = false),
-            StructField("element type", StringType, nullable = false),
-            StructField("dimensions", ArrayType(LongType), nullable = false)))
+            StructField("FileID", IntegerType, nullable = false),
+            StructField("ObjectPath", StringType, nullable = false),
+            StructField("AttributeName", StringType, nullable = false),
+            StructField("ElementType", StringType, nullable = false),
+            StructField("Dimensions", ArrayType(LongType), nullable = false)))
       case "sparky://datasets" =>
         StructType(
           Seq(
-            StructField("fileID", IntegerType, nullable = false),
-            StructField("dataset name", StringType, nullable = false),
-            StructField("element type", StringType, nullable = false),
-            StructField("dimensions", ArrayType(LongType), nullable = false),
-            StructField("number of elements", LongType, nullable = false)))
+            StructField("FileID", IntegerType, nullable = false),
+            StructField("DatasetPath", StringType, nullable = false),
+            StructField("ElementType", StringType, nullable = false),
+            StructField("Dimensions", ArrayType(LongType), nullable = false),
+            StructField("ElementCount", LongType, nullable = false)))
       case "sparky://files" =>
         StructType(
           Seq(
-            StructField("fileID", IntegerType, nullable = false),
-            StructField("fileName", StringType, nullable = false),
-            StructField("file size", LongType, nullable = false)))
+            StructField("FileID", IntegerType, nullable = false),
+            StructField("FilePath", StringType, nullable = false),
+            StructField("FileSize", LongType, nullable = false)))
     }
   }
 

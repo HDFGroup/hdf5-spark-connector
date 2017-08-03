@@ -31,7 +31,7 @@ class DatatypeTests extends FunTestSuite {
       (1L until 9L).map { x => Row(x, (x - 2).toByte) } :+
       Row(9L, Byte.MaxValue)
 
-    checkEqual(df.drop("fileID"), expected)
+    checkEqual(df.drop("FileID"), expected)
   }
 
   test("Reading int16") {
@@ -43,7 +43,7 @@ class DatatypeTests extends FunTestSuite {
       (1L until 9L).map { x => Row(x, (x - 2).toShort) } :+
       Row(9L, Short.MaxValue)
 
-    checkEqual(df.drop("fileID"), expected)
+    checkEqual(df.drop("FileID"), expected)
   }
 
   test("Reading int32") {
@@ -55,7 +55,7 @@ class DatatypeTests extends FunTestSuite {
       (1L until 9L).map { x => Row(x, (x - 2).toInt) } :+
       Row(9L, Int.MaxValue)
 
-    checkEqual(df.drop("fileID"), expected)
+    checkEqual(df.drop("FileID"), expected)
   }
 
   test("Reading int64") {
@@ -67,7 +67,7 @@ class DatatypeTests extends FunTestSuite {
       (1L until 9L).map { x => Row(x, x - 2) } :+
       Row(9L, Long.MaxValue)
 
-    checkEqual(df.drop("fileID"), expected)
+    checkEqual(df.drop("FileID"), expected)
   }
 
   // Unsigned integer tests
@@ -79,7 +79,7 @@ class DatatypeTests extends FunTestSuite {
 
     val expected = (0L until 9L).map { x => Row(x, x.toShort) } :+ Row(9L, 255)
 
-    checkEqual(df.drop("fileID"), expected)
+    checkEqual(df.drop("FileID"), expected)
   }
 
   test("Reading uint16") {
@@ -89,7 +89,7 @@ class DatatypeTests extends FunTestSuite {
 
     val expected = (0L until 9L).map { x => Row(x, x.toInt) } :+ Row(9L, 65535)
 
-    checkEqual(df.drop("fileID"), expected)
+    checkEqual(df.drop("FileID"), expected)
   }
 
   test("Reading uint32") {
@@ -99,7 +99,7 @@ class DatatypeTests extends FunTestSuite {
 
     val expected = (0L until 9L).map { x => Row(x, x) } :+ Row(9L, 4294967295L)
 
-    checkEqual(df.drop("fileID"), expected)
+    checkEqual(df.drop("FileID"), expected)
   }
 
   // Float tests
@@ -114,7 +114,7 @@ class DatatypeTests extends FunTestSuite {
       case 1 => Row(x, (-0.2 * x).toFloat)
     })
 
-    checkEqual(df.drop("fileID"), expected)
+    checkEqual(df.drop("FileID"), expected)
   }
 
   test("Reading float64") {
@@ -127,7 +127,7 @@ class DatatypeTests extends FunTestSuite {
       case 1 => Row(x, (-2 * x).toDouble / 10)
     })
 
-    checkEqual(df.drop("fileID"), expected)
+    checkEqual(df.drop("FileID"), expected)
   }
 
   test("Reading fixed length strings") {
@@ -139,7 +139,7 @@ class DatatypeTests extends FunTestSuite {
 
     val expected = (0 until 10).map { x => Row(x, alpha.substring(0, 0 + x)) }
 
-    checkEqual(df.drop("fileID"), expected)
+    checkEqual(df.drop("FileID"), expected)
   }
 
 }
