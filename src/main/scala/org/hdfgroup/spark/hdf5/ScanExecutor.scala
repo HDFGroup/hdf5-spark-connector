@@ -42,7 +42,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
             for (col <- cols) {
               if (col == "FileID")
                 listRows = listRows :+ dataset.fileID
-              else if (col == "FileName")
+              else if (col == "FilePath")
                 listRows = listRows :+ dataset.fileName
               else if (col == "FileSize")
                 listRows = listRows :+ dataset.realSize
