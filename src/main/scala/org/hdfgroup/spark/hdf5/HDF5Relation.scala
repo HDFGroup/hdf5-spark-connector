@@ -163,7 +163,9 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
             val matrixX = (Math.ceil(d(0) / blockSizeX)).toInt
             val matrixY = (Math.ceil(d(1) / blockSizeY)).toInt
 
-            if (validBlock) {
+            if (validBlock && block(0)*block(1) <= size) {
+              Seq(BoundedMDScan(ds, 0, block, startPoint, cols))
+            } else if (validBlock) {
               (0 until (matrixX * matrixY)).map(x => { BoundedMDScan(ds, 0, Array[Int](
                   if ((x % matrixX + 1) * blockSize(0) > block(0)) (block(0) % (x % matrixX * blockSize(0)))
                   else blockSize(0) ,
