@@ -14,7 +14,7 @@ class VRTLTests extends FunTestSuite {
 
     assert(df.schema === makeSchema(vrtlFiles))
 
-    val value = df.agg(max(df("file size"))).head
+    val value = df.agg(max(df("FileSize"))).head
     val expected = Row(106671208.toLong)
 
     checkRowsEqual(value, expected)
@@ -25,7 +25,7 @@ class VRTLTests extends FunTestSuite {
 
     assert(df.schema === makeSchema(vrtlFiles))
 
-    val totalSize = df.agg(sum(df("file size"))).head
+    val totalSize = df.agg(sum(df("FileSize"))).head
     val expected = Row(123356044L)
     checkRowsEqual(totalSize, expected)
   }
@@ -35,7 +35,7 @@ class VRTLTests extends FunTestSuite {
 
     assert(df.schema === makeSchema(vrtlDatasets))
 
-    val totalCount = df.agg(sum(df("number of elements"))).head
+    val totalCount = df.agg(sum(df("ElementCount"))).head
     val expected = Row(69919900L)
     checkRowsEqual(totalCount, expected)
   }
@@ -45,15 +45,15 @@ class VRTLTests extends FunTestSuite {
 
     assert(df.schema === makeSchema(vrtlDatasets))
 
-    val maxValue = df.agg(max(df("number of elements"))).head
+    val maxValue = df.agg(max(df("ElementCount"))).head
     val expected = Row(7560000L)
     checkRowsEqual(maxValue, expected)
 
     val c = df.count()
     assert(c === 56)
 
-    val len = df.drop("fileID").drop("dataset name").drop("element type")
-      .drop("number of elements").sort("dimensions").head(2).apply(1).get(0)
+    val len = df.drop("FileID").drop("DatasetPath").drop("ElementType")
+      .drop("ElementCount").sort("Dimensions").head(2).apply(1).get(0)
     val expect = Array(2, 2, 5)
     assert(len === expect)
   }
@@ -63,8 +63,8 @@ class VRTLTests extends FunTestSuite {
 
     assert(df.schema === makeSchema(vrtlAttributes))
 
-    val sortedVals = df.drop("fileID").drop("object path").drop("attribute name")
-      .drop("dimensions").sort("element type").head()
+    val sortedVals = df.drop("FileID").drop("ObjectPath").drop("AttributeName")
+      .drop("Dimensions").sort("ElementType").head()
     val expected = Row("FLString")
     assert(sortedVals === expected)
   }
@@ -74,8 +74,8 @@ class VRTLTests extends FunTestSuite {
 
     assert(df.schema === makeSchema(vrtlAttributes))
 
-    val sortedVals = df.drop("fileID").drop("object path").drop("element type")
-      .drop("dimensions").sort("attribute name").head()
+    val sortedVals = df.drop("FileID").drop("ObjectPath").drop("ElementType")
+      .drop("Dimensions").sort("AttributeName").head()
     val expected = Row("BeginDate")
     assert(sortedVals === expected)
   }

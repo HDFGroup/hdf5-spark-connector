@@ -41,6 +41,7 @@ class HDF5Reader(val input: File, val id: Integer) extends Closeable with Serial
   def getDataset[S, T](dataset: ArrayVar[T])(fun: DatasetReader[T] => S): S =
     fun(new DatasetReader[T](reader, dataset))
 
+  // Returns an ArrayVar if the specified dataset exists
   def getDataset1(dataset: String): Option[HDF5Node] = {
     log.trace("{}", Array[AnyRef](dataset))
 

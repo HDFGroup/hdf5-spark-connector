@@ -40,7 +40,7 @@ class LinearizationTests extends FunTestSuite {
 
     assert(df.schema === makeSchema(FloatType))
 
-    val distinctCount = Row(df.select(df("index")).distinct().count())
+    val distinctCount = Row(df.select(df("Index")).distinct().count())
     val expected = Row(720 * 1440.toLong)
     checkRowsEqual(distinctCount, expected)
   }

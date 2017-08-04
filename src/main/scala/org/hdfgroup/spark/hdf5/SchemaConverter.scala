@@ -14,36 +14,36 @@ object SchemaConverter {
     dataset.path match {
       case "sparky://files" => {
         StructType(Array(
-          StructField("fileID", IntegerType, false),
-          StructField("fileName", StringType, false),
-          StructField("file size", LongType, false)
+          StructField("FileID", IntegerType, false),
+          StructField("FilePath", StringType, false),
+          StructField("FileSize", LongType, false)
         ))
       }
       case "sparky://datasets" => {
         StructType(Array(
-          StructField("fileID", IntegerType, false),
-          StructField("dataset name", StringType, false),
-          StructField("element type", StringType, false),
-          StructField("dimensions", ArrayType(LongType), false),
-          StructField("number of elements", LongType, false)
+          StructField("FileID", IntegerType, false),
+          StructField("DatasetPath", StringType, false),
+          StructField("ElementType", StringType, false),
+          StructField("Dimensions", ArrayType(LongType), false),
+          StructField("ElementCount", LongType, false)
         ))
 
       }
       case "sparky://attributes" => {
         StructType(Array(
-          StructField("fileID", IntegerType, false),
-          StructField("object path", StringType, false),
-          StructField("attribute name", StringType, false),
-          StructField("element type", StringType, false),
-          StructField("dimensions", ArrayType(LongType), false)
+          StructField("FileID", IntegerType, false),
+          StructField("ObjectPath", StringType, false),
+          StructField("AttributeName", StringType, false),
+          StructField("ElementType", StringType, false),
+          StructField("Dimensions", ArrayType(LongType), false)
         ))
       }
       case _ => {
         val columns = StructType(Array(
-          StructField("fileID", IntegerType, false),
-          StructField("index", LongType, false)
+          StructField("FileID", IntegerType, false),
+          StructField("Index", LongType, false)
         ))
-        StructType(columns :+ StructField("value", extractTypes(dataset.contains), false))
+        StructType(columns :+ StructField("Value", extractTypes(dataset.contains), false))
         /* For now we linearize everything
         val columns = dataset.dimension.indices.map {
         index => "index" + index

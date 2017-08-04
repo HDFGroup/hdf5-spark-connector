@@ -24,8 +24,11 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
 
   private val log = LoggerFactory.getLogger(getClass)
 
-  private val dataSchema = Array[String]("fileID", "index", "value")
+  private val dataSchema = Array[String]("FileID", "Index", "Value")
 
+  // Returns a sequence of the virtual table rows or the data/index/fileID rows.
+  // The data rows are hard-coded to efficiently read the data.
+  // PrunedScans with two columns must be checked to return the columns in the correct order.
   def execQuery[T](scanItem: ScanItem): Seq[Row] = {
     log.trace("{}", Array[AnyRef](scanItem))
 
@@ -37,11 +40,11 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
           else {
             var listRows = List[Any]()
             for (col <- cols) {
-              if (col == "fileID")
+              if (col == "FileID")
                 listRows = listRows :+ dataset.fileID
-              else if (col == "fileName")
+              else if (col == "FilePath")
                 listRows = listRows :+ dataset.fileName
-              else if (col == "file size")
+              else if (col == "FileSize")
                 listRows = listRows :+ dataset.realSize
             }
             Seq(Row.fromSeq(listRows))
@@ -57,15 +60,15 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
           else {
             var listRows = List[Any]()
             for (col <- cols) {
-              if (col == "fileID")
+              if (col == "FileID")
                 listRows = listRows :+ dataset.fileID
-              else if (col == "dataset name")
+              else if (col == "DatasetPath")
                 listRows = listRows :+ dataset.realPath
-              else if (col == "element type")
+              else if (col == "ElementType")
                 listRows = listRows :+ typeInfo.substring(0, typeInfo.indexOf('('))
-              else if (col == "dimensions")
+              else if (col == "Dimensions")
                 listRows = listRows :+ dataset.dimension
-              else if (col == "number of elements")
+              else if (col == "ElementCount")
                 listRows = listRows :+ dataset.realSize
             }
             Seq(Row.fromSeq(listRows))
@@ -82,15 +85,15 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
             var listRows = List[Any]()
             val typeInfo = dataset.contains.toString
             for (col <- cols) {
-              if (col == "fileID")
+              if (col == "FileID")
                 listRows = listRows :+ dataset.fileID
-              else if (col == "object path")
+              else if (col == "ObjectPath")
                 listRows = listRows :+ dataset.realPath
-              else if (col == "attribute name")
+              else if (col == "AttributeName")
                 listRows = listRows :+ dataset.attribute
-              else if (col == "element type")
+              else if (col == "ElementType")
                 listRows = listRows :+ typeInfo.substring(0, typeInfo.indexOf('('))
-              else if (col == "dimensions")
+              else if (col == "Dimensions")
                 listRows = listRows :+ dataset.dimension
             }
             Seq(Row.fromSeq(listRows))
@@ -101,21 +104,21 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
           val col =
             if (cols.length == 0) dataSchema
             else cols
-          val hasValue = col contains "value"
-          val hasIndex = col contains "index"
-          val hasID = col contains "fileID"
+          val hasValue = col contains "Value"
+          val hasIndex = col contains "Index"
+          val hasID = col contains "FileID"
           if (hasValue) {
             val dataReader = newDatasetReader(dataset)(_.readDataset())
             if (hasIndex) {
               val indexed = dataReader.zipWithIndex
               if (hasID) indexed.map { case (x, index) => Row(fileID, index.toLong, x) }
               else indexed.map { case (x, index) => {
-                if (col(0) == "index") Row(index.toLong, x)
+                if (col(0) == "Index") Row(index.toLong, x)
                 else Row(x, index.toLong)
               }}
             } else {
               if (hasID) dataReader.map { x => {
-                if (col(0) == "fileID") Row(fileID, x)
+                if (col(0) == "FileID") Row(fileID, x)
                 else Row(x, fileID)
               }}
               else dataReader.map { x => Row(x) }
@@ -124,7 +127,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
             if (hasIndex) {
               val indexed = (0L until dataset.size)
               if (hasID) indexed.map { x => {
-                if (col(0) == "fileID") Row(fileID, x)
+                if (col(0) == "FileID") Row(fileID, x)
                 else Row(x, fileID)
               }}
               else indexed.map { x => Row(x) }
@@ -137,21 +140,21 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
         val col =
           if (cols.length == 0) dataSchema
           else cols
-        val hasValue = col contains "value"
-        val hasIndex = col contains "index"
-        val hasID = col contains "fileID"
+        val hasValue = col contains "Value"
+        val hasIndex = col contains "Index"
+        val hasID = col contains "FileID"
         if (hasValue) {
           val dataReader = newDatasetReader(dataset)(_.readDataset(ioSize, offset))
           if (hasIndex) {
             val indexed = dataReader.zipWithIndex
             if (hasID) indexed.map { case (x, index) => Row(fileID, offset + index.toLong, x) }
             else indexed.map { case (x, index) => {
-              if (col(0) == "index") Row(offset + index.toLong, x)
+              if (col(0) == "Index") Row(offset + index.toLong, x)
               else Row(x, offset + index.toLong)
             }}
           } else {
             if (hasID) dataReader.map { x => {
-              if (col(0) == "fileID") Row(fileID, x)
+              if (col(0) == "FileID") Row(fileID, x)
               else Row(x, fileID)
             }}
             else dataReader.map { x => Row(x) }
@@ -160,7 +163,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
           if (hasIndex) {
             val indexed = (0L until dataset.size)
             if (hasID) indexed.map { x => {
-              if (col(0) == "fileID") Row(fileID, offset + x.toLong)
+              if (col(0) == "FileID") Row(fileID, offset + x.toLong)
               else Row(offset + x.toLong, fileID)
             }}
             else indexed.map { x => Row(offset + x.toLong) }
@@ -172,9 +175,9 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
         val col =
           if (cols.length == 0) dataSchema
           else cols
-        val hasValue = col contains "value"
-        val hasIndex = col contains "index"
-        val hasID = col contains "fileID"
+        val hasValue = col contains "Value"
+        val hasIndex = col contains "Index"
+        val hasID = col contains "FileID"
         val d = dataset.dimension
         val edgeBlock = (offset, blockDimensions, d).zipped.map { case (offset, dim, d) => {
           if ((offset / dim) < ((Math.floor(d / dim)).toInt)) dim
@@ -193,13 +196,13 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
             else {
               indexed.map { case (x, index) => {
                 val globalIndex = blockFill + (index - index % edgeBlock(1)) / edgeBlock(1) * d(1) + index % edgeBlock(1) + offset(1)
-                if (col(0) == "index") Row(globalIndex, x)
+                if (col(0) == "Index") Row(globalIndex, x)
                 else Row(x, globalIndex)
               }}
             }
           } else {
             if (hasID) dataReader.map { x => {
-              if (col(0) == "fileID") Row(fileID, x)
+              if (col(0) == "FileID") Row(fileID, x)
               else Row(x, fileID)
             }
             }
@@ -210,7 +213,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
             val indexed = (0L until edgeBlock(0) * edgeBlock(1).toLong)
             if (hasID) indexed.map { x => {
               val globalIndex = blockFill + (x - x % edgeBlock(1)) / edgeBlock(1) * d(1) + x % edgeBlock(1) + offset(1)
-              if (col(0) == "fileID") Row(fileID, globalIndex)
+              if (col(0) == "FileID") Row(fileID, globalIndex)
               else Row(globalIndex, fileID)
             }}
             else {

@@ -26,6 +26,7 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
   val hadoopConfiguration = sqlContext.sparkContext.hadoopConfiguration
   val fileSystem = FileSystem.get(hadoopConfiguration)
 
+  // Gets an array of the files in the directory (and recursively in the sub-directories if specified)
   lazy val files: Array[URI] = {
     log.trace("files: Array[URI]")
 
@@ -50,6 +51,7 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
       .toArray
   }
 
+  // Maps the files with arbitrary ID's starting at zero
   private lazy val fileIDs = {
     log.trace("fileIDs")
     files.zipWithIndex.map {
@@ -59,6 +61,7 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
 
   def getFileName(id: Integer): Option[String] = fileIDs.get(id)
 
+  // Checks the "dataset" variable and either returns a virtual table or the data, index, and fileID of the files
   private lazy val datasets: Array[ArrayVar[_]] = {
     log.trace("datasets: Array[ArrayVar[_]]")
 
@@ -111,12 +114,14 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
 
   override def schema: StructType = SchemaConverter.convertSchema(hdf5Schema)
 
+  // TableScan calls PrunedScan with an empty array signalling all columns are to be returned
   override def buildScan(): RDD[Row] = {
     log.trace("buildScan(): RDD[Row]")
 
     buildScan(Array[String]())
   }
 
+  // PrunedScan that either calls an UnboundedScan or multiple BoundedScans with the requested columns to get an RDD
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
     log.trace("buildScan(): RDD[Row]")
 
@@ -158,7 +163,9 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
             val matrixX = (Math.ceil(d(0) / blockSizeX)).toInt
             val matrixY = (Math.ceil(d(1) / blockSizeY)).toInt
 
-            if (validBlock) {
+            if (validBlock && block(0)*block(1) <= size) {
+              Seq(BoundedMDScan(ds, 0, block, startPoint, cols))
+            } else if (validBlock) {
               (0 until (matrixX * matrixY)).map(x => { BoundedMDScan(ds, 0, Array[Int](
                   if ((x % matrixX + 1) * blockSize(0) > block(0)) (block(0) % (x % matrixX * blockSize(0)))
                   else blockSize(0) ,
