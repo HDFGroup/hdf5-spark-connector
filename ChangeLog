@@ -1,0 +1,30 @@
+2017-10-17  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
+
+	* src/main/scala/org/hdfgroup/spark/hdf5/reader/DatasetReader.scala:
+	(readDataset): added a new function with index argument.
+
+2017-10-16  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
+
+	* src/main/scala/org/hdfgroup/spark/hdf5/reader/HDF5Schema.scala:
+	(readSlicedMDArrayBlockWithOffset) added.
+
+2017-10-13  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
+
+	* src/test/scala/org/hdfgroup/spark/hdf5/HyperslabTests.scala:
+	added index option for 3d test.
+	* src/main/scala/org/hdfgroup/spark/hdf5/HDF5Relation.scala
+	(HDF5Relation):	added index argument.
+	* src/main/scala/org/hdfgroup/spark/hdf5/ScanExecutor.scala
+	(SlicedMDScan):	added.
+
+
+2017-10-12  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
+
+	* src/main/scala/org/hdfgroup/spark/hdf5/DefaultSource.scala:
+	added index option.
+
+2017-09-30  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
+
+	* ChangeLog: added
+
+

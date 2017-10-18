@@ -1,3 +1,10 @@
+// Copyright (C) 2017 The HDF Group
+// All rights reserved.
+//
+//  \author Hyo-Kyung Lee (hyoklee@hdfgroup.org)
+//  \date October 18, 2017
+//  \note added SlicedMDScan() class case.
+// 
 package org.hdfgroup.spark.hdf5
 
 import java.io.File
@@ -11,13 +18,27 @@ import org.slf4j.LoggerFactory
 import scala.language.existentials
 
 object ScanExecutor {
+
   sealed trait ScanItem {
     val dataset: ArrayVar[_]
     val ioSize: Int
   }
-  case class UnboundedScan(dataset: ArrayVar[_], ioSize: Int, cols: Array[String]) extends ScanItem
-  case class BoundedScan(dataset: ArrayVar[_], ioSize: Int, blockNumber: Long = 0, cols: Array[String]) extends ScanItem
-  case class BoundedMDScan(dataset: ArrayVar[_], ioSize: Int, blockDimensions: Array[Int], offset: Array[Long], cols: Array[String]) extends ScanItem
+
+  case class UnboundedScan(dataset: ArrayVar[_], ioSize: Int, cols: Array[String])
+      extends ScanItem
+
+  case class BoundedScan(dataset: ArrayVar[_], ioSize: Int, blockNumber: Long = 0,
+                         cols: Array[String]) extends ScanItem
+
+  case class BoundedMDScan(dataset: ArrayVar[_], ioSize: Int,
+                           blockDimensions: Array[Int], offset: Array[Long],
+                           cols: Array[String]) extends ScanItem
+      
+  case class SlicedMDScan(dataset: ArrayVar[_], ioSize: Int,
+                           blockDimensions: Array[Int], offset: Array[Long],
+                           index: Array[Long],
+                           cols: Array[String]) extends ScanItem      
+
 }
 
 class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
@@ -134,7 +155,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
             } else Seq(Row(fileID))
           }
         }
-      }
+      } // case UnBoundedScan
 
       case BoundedScan(dataset, ioSize, offset, cols) => {
         val col =
@@ -179,10 +200,12 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
         val hasIndex = col contains "Index"
         val hasID = col contains "FileID"
         val d = dataset.dimension
-        val edgeBlock = (offset, blockDimensions, d).zipped.map { case (offset, dim, d) => {
-          if ((offset / dim) < ((Math.floor(d / dim)).toInt)) dim
-          else d % offset
-        }}
+        val edgeBlock = (offset, blockDimensions, d).zipped.map { 
+              case (offset, dim, d) => {
+                  if ((offset / dim) < ((Math.floor(d / dim)).toInt)) dim
+                  else d % offset
+                           }              
+              }
         val blockFill = offset(0) * d(1)
         if (hasValue) {
           // Calculations to correctly map the index of each datapoint in
@@ -195,7 +218,8 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
             }
             else {
               indexed.map { case (x, index) => {
-                val globalIndex = blockFill + (index - index % edgeBlock(1)) / edgeBlock(1) * d(1) + index % edgeBlock(1) + offset(1)
+                val globalIndex = blockFill + (index - index % edgeBlock(1)) / edgeBlock(1) * d(1)
+                + index % edgeBlock(1) + offset(1)
                 if (col(0) == "Index") Row(globalIndex, x)
                 else Row(x, globalIndex)
               }}
@@ -217,11 +241,23 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
               else Row(globalIndex, fileID)
             }}
             else {
-              indexed.map { x => Row(blockFill + (x - x % edgeBlock(1)) / edgeBlock(1) * d(1) + x % edgeBlock(1) + offset(1)) }
+              indexed.map { x => Row(blockFill + (x - x % edgeBlock(1)) / edgeBlock(1) * d(1) + x % edgeBlock(1)
+                + offset(1)) }
             }
           } else Seq(Row(fileID))
         }
-      }
+      } // case BoundedMDScan()
+      
+    case SlicedMDScan(dataset, ioSize, blockDimensions, offset, index, 
+                      cols) => {
+
+        val dataReader = newDatasetReader(dataset)(_.readDataset(blockDimensions,
+                                                                 offset, index))
+        //  This is not complete yet. <hyokyung 2017.10.18. 08:06:06>
+        //  The goal is to test whether readSlicedMDArrayBlockWithOffset() function
+        //  in HDF5Schema.scala return the right subsetted array of integers.
+        dataReader.map { x => val l:Long=x.asInstanceOf[Number].longValue;  Row(l) }
+      } // case SlicedMDScan
     }
   }
 
