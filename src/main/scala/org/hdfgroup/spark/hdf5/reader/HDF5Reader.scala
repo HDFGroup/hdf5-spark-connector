@@ -1,42 +1,30 @@
+// Copyright (C) 2017 The HDF Group
+// All rights reserved.
+//
+//  \author Hyo-Kyung Lee (hyoklee@hdfgroup.org)
+//  \date October 18, 2017
+//  \note cleaned up codes.
+
 package org.hdfgroup.spark.hdf5.reader
 
 import java.io.{Closeable, File}
-
 import ch.systemsx.cisd.hdf5.{HDF5DataClass, HDF5DataTypeInformation, HDF5FactoryProvider}
 import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.slf4j.LoggerFactory
-
 import scala.collection.JavaConverters._
 
-class HDF5Reader(val input: File, val id: Integer) extends Closeable with Serializable {
+class HDF5Reader(val input: File, val id: Integer) extends Closeable 
+with Serializable {
 
   private val log = LoggerFactory.getLogger(getClass)
 
   val reader = HDF5FactoryProvider.get().openForReading(input)
 
-  // lazy val path: String = input.getPath
-
   lazy val nodes = listMembers()
 
   lazy val attributes = listAttributes()
 
-  /*
-  private lazy val objects = {
-    log.trace("objects")
-
-    getSchema.flatten().map {
-      case node @ ArrayVar(_, name, _, _, _, _, _, _) => (name, node)
-      case node @ Group(_, name, _) => (name, node)
-      case node @ GenericNode(_, _) => (node.path, node)
-    }.toMap
-  }
-
-  def getObject(path: String): Option[HDF5Node] = objects.get(path)
-   */
-
   override def close(): Unit = reader.close()
-
-  // def isDataset(path: String): Boolean = !reader.isGroup(path)
 
   def getDataset[S, T](dataset: ArrayVar[T])(fun: DatasetReader[T] => S): S =
     fun(new DatasetReader[T](reader, dataset))
