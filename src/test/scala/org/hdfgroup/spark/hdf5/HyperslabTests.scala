@@ -45,7 +45,7 @@ class HyperslabTests extends FunTestSuite {
   val mdtest = "/dimensionality/3dim"
   
   test("Testing 3d hyperslab") {
-    val df = sqlContext.read.option("window size", "1000")
+    val df = sqlContext.read.option("window size", "5")
     .option("block", "2,2")
     .option("start", "0,0")
     .option("index", "-1,-1,0")
