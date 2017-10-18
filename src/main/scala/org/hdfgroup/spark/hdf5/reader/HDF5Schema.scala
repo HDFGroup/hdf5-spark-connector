@@ -1,7 +1,19 @@
+// Copyright (C) 2017 The HDF Group
+// All rights reserved.
+//
+//  \author Hyo-Kyung Lee (hyoklee@hdfgroup.org)
+//  \date October 17, 2017
+//  \note added readSlicedMDArrayBlockWithOffset() into HDF5Schema object.
+//        However, Scala compiler throws Cyclic type de-refencing error when
+//        JHDF5 readSlicedMDArrayBlockWithOffset() function call is made.
+//        I tried the latest Scala (2.12) but it does not help.
 package org.hdfgroup.spark.hdf5.reader
 
+import org.apache.commons.lang.ArrayUtils
+import org.apache.spark.SparkException    
 import ch.systemsx.cisd.hdf5._
-import org.apache.spark.SparkException
+import ch.systemsx.cisd.base.mdarray._
+
 
 object HDF5Schema {
 
@@ -9,9 +21,16 @@ object HDF5Schema {
   //          case COMPOUND
   sealed trait HDF5Type[T] {
     def readArray(reader: IHDF5Reader): Array[T]
-    def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[T]
+    def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, 
+                                 offset: Long): Array[T]
     def readMatrix(reader: IHDF5Reader): Array[T]
-    def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[T]
+    def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int],
+                                  offset: Array[Long]): Array[T]
+    def readSlicedMDArrayBlockWithOffset(
+                                         reader: IHDF5Reader, 
+                                         blocksize: Array[Int], 
+                                         offset: Array[Long], 
+                                         index: Array[Long]): Array[T]
   }
 
   case class Int8(fileID: Integer, name: String) extends HDF5Type[Byte] {
@@ -26,6 +45,16 @@ object HDF5Schema {
 
     override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Byte] =
       reader.int8.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
+          
+    override def readSlicedMDArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long], index: Array[Long]): Array[Byte] =
+          // This is not complete. Test return value temporarily.
+          // <hyokyung 2017.10.18. 09:18:27>
+          Array(0,0,0)
+          // The above should be replaced with the following call which causes
+          // Scala compiler error.
+          // reader.int8.readSlicedMDArrayBlockWithOffset(name, blockSize, offset, index)
+     
+    
   }
 
   case class UInt8(fileID: Integer, name: String) extends HDF5Type[Short] {
@@ -40,6 +69,9 @@ object HDF5Schema {
 
     override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Short] =
       reader.uint8.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten.map(UnsignedIntUtils.toUint8)
+
+    override def readSlicedMDArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long], index: Array[Long]): Array[Short] =
+          Array(0,0,0)          
   }
 
   case class Int16(fileID: Integer, name: String) extends HDF5Type[Short] {
@@ -54,6 +86,9 @@ object HDF5Schema {
 
     override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Short] =
       reader.int16.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
+
+    override def readSlicedMDArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long], index: Array[Long]): Array[Short] =
+          Array(0,0,0)                    
   }
 
   case class UInt16(fileID: Integer, name: String) extends HDF5Type[Int] {
@@ -68,6 +103,9 @@ object HDF5Schema {
 
     override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Int] =
       reader.uint16.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten.map(UnsignedIntUtils.toUint16)
+
+    override def readSlicedMDArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long], index: Array[Long]): Array[Int] =
+          Array(0,0,0)                    
   }
 
   case class Int32(fileID: Integer, name: String) extends HDF5Type[Int] {
@@ -82,6 +120,20 @@ object HDF5Schema {
 
     override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Int] =
       reader.int32.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
+
+    override def readSlicedMDArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long], index: Array[Long]): Array[Int] = {
+      // Cyclic type de-refencing error occurs.
+      // Is it because return value is an abstract class of JHDF5 MDArray?
+      // 
+      //reader.int32.readSlicedMDArrayBlockWithOffset(name, 
+      //                                             blockSize,
+      //                                             offset,
+      //                                             index)
+      // TO-DO: We can try either netCDF-Java or HDF5-Java calls here to construct
+      // integer array from multi-dimensional dataset slice.
+        Array(0, 10, 100, 11)
+      }
+
   }
 
   case class UInt32(ffileID: Integer, name: String) extends HDF5Type[Long] {
@@ -96,6 +148,9 @@ object HDF5Schema {
 
     override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Long] =
       reader.uint32.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten.map(UnsignedIntUtils.toUint32)
+
+    override def readSlicedMDArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long], index: Array[Long]): Array[Long] =
+          Array(0,0,0)                              
   }
 
   case class Int64(fileID: Integer, name: String) extends HDF5Type[Long] {
@@ -110,6 +165,9 @@ object HDF5Schema {
 
     override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Long] =
       reader.int64.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
+
+    override def readSlicedMDArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long], index: Array[Long]): Array[Long] =
+          Array(0L,0L,0L)                                        
   }
 
   case class Float32(fileID: Integer, name: String) extends HDF5Type[Float] {
@@ -124,6 +182,9 @@ object HDF5Schema {
 
     override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Float] =
       reader.float32.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
+
+    override def readSlicedMDArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long], index: Array[Long]): Array[Float] =
+          Array(0,0,0)                                        
   }
 
   case class Float64(fileID: Integer, name: String) extends HDF5Type[Double] {
@@ -138,24 +199,33 @@ object HDF5Schema {
 
     override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Double] =
       reader.float64.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
+
+    override def readSlicedMDArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long], index: Array[Long]): Array[Double] =
+          Array(0,0,0)                                                  
   }
 
   case class FLString(fileID: Integer, name: String) extends HDF5Type[String] {
     override def readArray(reader: IHDF5Reader): Array[String] =
       reader.string.readArray(name)
 
-    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[String] =
-      reader.string.readArrayBlock(name, blockSize, offset)
-
     override def readMatrix(reader: IHDF5Reader): Array[String] = {
       throw new SparkException("'readMatrix' does not support strings.")
       Array[String]("")
     }
+      
+    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[String] =
+      reader.string.readArrayBlock(name, blockSize, offset)
+
 
     override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[String] = {
       throw new SparkException("'readMatrixBlock' does not support strings.")
       Array[String]("")
     }
+
+   override def readSlicedMDArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long], index: Array[Long]): Array[String] = {
+      throw new SparkException("'readSlicedMDArrayBlockWithOffset' does not support strings.")
+      Array[String]("")
+     }
   }
 
   sealed trait HDF5Node {

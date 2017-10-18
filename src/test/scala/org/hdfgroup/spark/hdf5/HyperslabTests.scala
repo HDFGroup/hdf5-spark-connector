@@ -2,9 +2,12 @@
 // All rights reserved.
 //
 //  \author Hyo-Kyung Lee (hyoklee@hdfgroup.org)
-//  \date October 3, 2017
-//  \note added multi-dimensional data test.
 //
+//  \date October 18, 2017
+//  \note removed sort in multi-dimensional dataset test.
+//
+//  \date October 3, 2017
+//  \note added multi-dimensional dataset test.
 package org.hdfgroup.spark.hdf5
 
 import org.apache.spark.sql.Row
@@ -45,14 +48,14 @@ class HyperslabTests extends FunTestSuite {
   val mdtest = "/dimensionality/3dim"
   
   test("Testing 3d hyperslab") {
-    val df = sqlContext.read.option("window size", "5")
+    val df = sqlContext.read.option("window size", "10")
     .option("block", "2,2")
     .option("start", "0,0")
     .option("index", "-1,-1,0")
     .hdf5(h5file, mdtest)
 
     assert(df.schema === makeSchema(IntegerType))
-    val len = df.drop("FileID").drop("Value").sort("Index").collect
+    val len = df.drop("FileID").drop("Value").collect
     val expect = Array(Row(0L), Row(10L), Row(100L), Row(11L))
     assert(len === expect)
 
