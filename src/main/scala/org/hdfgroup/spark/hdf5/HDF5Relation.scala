@@ -1,3 +1,9 @@
+// Copyright (C) 2017 The HDF Group
+// All rights reserved.
+//
+//  \author Hyo-Kyung Lee (hyoklee@hdfgroup.org)
+//  \date October 3, 2017
+//  \note added multi-dimensional case under buildScan().
 package org.hdfgroup.spark.hdf5
 
 import java.io.File
@@ -15,18 +21,24 @@ import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.hdfgroup.spark.hdf5.reader.{HDF5Reader, HDF5Schema}
 import org.slf4j.LoggerFactory
 
-class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtension: Array[String],
-                   val chunkSize: Int, val start: Array[Long], val block: Array[Int],
-                   val recursion: Boolean)(@transient val sqlContext: SQLContext)
-  extends BaseRelation with TableScan with PrunedScan {
-  // with InsertableRelation
+class HDF5Relation(val paths: Array[String], val dataset: String, 
+                   val fileExtension: Array[String],
+                   val chunkSize: Int, 
+                   val start: Array[Long], 
+                   val block: Array[Int],
+                   val index: Array[Long], 
+                   val recursion: Boolean)
+    (@transient val sqlContext: SQLContext)
+    extends BaseRelation with TableScan with PrunedScan {
+    // with InsertableRelation
 
   private val log = LoggerFactory.getLogger(getClass)
 
   val hadoopConfiguration = sqlContext.sparkContext.hadoopConfiguration
   val fileSystem = FileSystem.get(hadoopConfiguration)
 
-  // Gets an array of the files in the directory (and recursively in the sub-directories if specified)
+  // Gets an array of the files in the directory (and recursively in the
+  // sub-directories if specified)
   lazy val files: Array[URI] = {
     log.trace("files: Array[URI]")
 
@@ -61,7 +73,8 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
 
   def getFileName(id: Integer): Option[String] = fileIDs.get(id)
 
-  // Checks the "dataset" variable and either returns a virtual table or the data, index, and fileID of the files
+  // Checks the "dataset" variable and either returns a virtual table or
+  // the data, index, and fileID of the files
   private lazy val datasets: Array[ArrayVar[_]] = {
     log.trace("datasets: Array[ArrayVar[_]]")
 
@@ -114,14 +127,16 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
 
   override def schema: StructType = SchemaConverter.convertSchema(hdf5Schema)
 
-  // TableScan calls PrunedScan with an empty array signalling all columns are to be returned
+  // TableScan calls PrunedScan with an empty array signalling all columns
+  // are to be returned
   override def buildScan(): RDD[Row] = {
     log.trace("buildScan(): RDD[Row]")
 
     buildScan(Array[String]())
   }
 
-  // PrunedScan that either calls an UnboundedScan or multiple BoundedScans with the requested columns to get an RDD
+  // PrunedScan that either calls an UnboundedScan or multiple BoundedScans
+  // with the requested columns to get an RDD
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
     log.trace("buildScan(): RDD[Row]")
 
@@ -129,7 +144,8 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
     val hasBlock = block(0) != -1
     val scans = datasets.map { UnboundedScan(_, chunkSize, requiredColumns) }
     val splitScans = scans.flatMap {
-      case UnboundedScan(ds, size, cols) if (ds.size > size || hasStart || hasBlock) =>
+      case UnboundedScan(ds, size, cols)
+      if (ds.size > size || hasStart || hasBlock) =>
         ds.dimension.length match {
           case 1 => {
             val validBlock = hasBlock && block.length == 1
@@ -139,8 +155,11 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
 
             if (validBlock) {
               (0L until Math.ceil(block(0).toFloat / size).toLong).map(x => {
-                if ((x+1)*size < block(0)) BoundedScan(ds, size, x * size + startPoint, cols)
-                else BoundedScan(ds, block(0) % (x.toInt*size), x * size + startPoint, cols)
+                if ((x+1)*size < block(0))
+                    BoundedScan(ds, size, x * size + startPoint, cols)
+                else
+                    BoundedScan(ds, block(0) % (x.toInt*size),
+                                x * size + startPoint, cols)
               })
             } else {
               (0L until Math.ceil(ds.size.toFloat / size).toLong).map(x =>
@@ -150,11 +169,15 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
           case 2 => {
             val validBlock = hasBlock && block.length == 2
             val startPoint =
-              if (hasStart && start.length == 2) start
-              else Array(0L, 0L)
+              if (hasStart && start.length == 2)
+                  start
+              else
+                  Array(0L, 0L)
             val d =
-              if (validBlock) block
-              else ds.dimension.map(_.toInt)
+              if (validBlock)
+                  block
+              else
+                  ds.dimension.map(_.toInt)
             val blockSizeX = math.sqrt(size * d(0) / d(1))
             val blockSizeY = math.sqrt(size * d(1) / d(0))
             val blockSize = Array[Int](blockSizeX.toInt, blockSizeY.toInt)
@@ -166,21 +189,42 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
             if (validBlock && block(0)*block(1) <= size) {
               Seq(BoundedMDScan(ds, 0, block, startPoint, cols))
             } else if (validBlock) {
-              (0 until (matrixX * matrixY)).map(x => { BoundedMDScan(ds, 0, Array[Int](
-                  if ((x % matrixX + 1) * blockSize(0) > block(0)) (block(0) % (x % matrixX * blockSize(0)))
-                  else blockSize(0) ,
-                  if ((x / matrixY + 1) * blockSize(1) > block(1)) (block(1) % (x / matrixY * blockSize(1)))
-                  else blockSize(1)
+              (0 until (matrixX * matrixY)).map(x => {
+              BoundedMDScan(ds, 0, Array[Int](
+                  if ((x % matrixX + 1) * blockSize(0) > block(0))
+                      (block(0) % (x % matrixX * blockSize(0)))
+                  else
+                      blockSize(0) ,
+                  if ((x / matrixY + 1) * blockSize(1) > block(1))
+                      (block(1) % (x / matrixY * blockSize(1)))
+                  else
+                      blockSize(1)
                 ), Array[Long]((x % matrixX * blockSize(0)).toLong
-                  + startPoint(0), (x / matrixX * blockSize(1)).toLong + startPoint(1)), cols)})
+                  + startPoint(0), 
+                               (x / matrixX * blockSize(1)).toLong 
+                               + startPoint(1)), 
+                   cols)
+                  }
+                ) // map
             } else {
               // Creates bounded scans on the blocks with their corresponding
               // indices to cover the entire matrix
-              (0L until (matrixX * matrixY).toLong).map(x => BoundedMDScan(ds, 0, blockSize, Array[Long]((x % matrixX *
-                blockSize(0)).toLong + startPoint(0), (x / matrixX * blockSize(1)).toLong + startPoint(1)), cols))
-            }
+              (0L until (matrixX * matrixY).toLong).map(x =>
+              BoundedMDScan(ds,  0, blockSize,
+                Array[Long]((x % matrixX * blockSize(0)).toLong 
+                            + startPoint(0),
+                            (x / matrixX * blockSize(1)).toLong 
+                            + startPoint(1)), 
+                            cols))
+            } // else
           }
-          case _ => throw new SparkException("Unsupported dataset rank!")
+          case _ => {
+              if (index.length == ds.dimension.length)
+                  (0L until 1).map(x =>SlicedMDScan(ds, 0, block, start,
+                                                    index, cols))
+              else
+                  throw new SparkException("Unsupported dataset rank!")
+           }
         }
       case x: UnboundedScan => Seq(x)
     }
@@ -188,28 +232,4 @@ class HDF5Relation(val paths: Array[String], val dataset: String, val fileExtens
       new ScanExecutor(item.dataset.fileName, item.dataset.fileID).execQuery(item)
     }
   }
-  /*
-  // The function below was borrowed from JSONRelation
-  override def insert(data: DataFrame, overwrite: Boolean): Unit = {
-
-    if (overwrite) {
-      try {
-        fileSystem.delete(filesystem, true)
-      } catch {
-        case e: IOException =>
-          throw new IOException(
-            s"Unable to clear output directory ${FileSystem.toString} prior"
-              + s" to INSERT OVERWRITE a HDF5 table:\n${e.toString}")
-      }
-      // Write the data. We assume that schema isn't changed, and we won't update it.
-
-      // ADD A HDF5 SAVE FILE METHOD
-      // XmlFile.saveAsXmlFile(data, filesystemPath.toString, parameters)
-      // val codecClass = CompressionCodecs.getCodecClass(codec)
-      // data.saveAsCsvFile(filesystemPath.toString, Map("delimiter" -> delimiter.toString),
-      // codecClass)
-    } else {
-      sys.error("HDF5 tables only support INSERT OVERWRITE for now.")
-    }
-  }*/
 }
