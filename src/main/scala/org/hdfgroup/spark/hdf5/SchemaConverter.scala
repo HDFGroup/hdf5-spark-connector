@@ -35,7 +35,8 @@ object SchemaConverter {
           StructField("ObjectPath", StringType, false),
           StructField("AttributeName", StringType, false),
           StructField("ElementType", StringType, false),
-          StructField("Dimensions", ArrayType(LongType), false)
+          StructField("Dimensions", ArrayType(LongType), false),
+          StructField("Value", StringType, false)          
         ))
       }
       case _ => {

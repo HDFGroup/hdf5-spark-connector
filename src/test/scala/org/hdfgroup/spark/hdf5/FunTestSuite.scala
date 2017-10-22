@@ -50,7 +50,8 @@ abstract class FunTestSuite extends FunSuite with BeforeAndAfterAll {
             StructField("ObjectPath", StringType, nullable = false),
             StructField("AttributeName", StringType, nullable = false),
             StructField("ElementType", StringType, nullable = false),
-            StructField("Dimensions", ArrayType(LongType), nullable = false)))
+            StructField("Dimensions", ArrayType(LongType), nullable = false),
+            StructField("Value", StringType, nullable = false)))            
       case "sparky://datasets" =>
         StructType(
           Seq(

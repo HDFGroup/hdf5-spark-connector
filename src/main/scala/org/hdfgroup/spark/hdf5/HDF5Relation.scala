@@ -82,7 +82,7 @@ class HDF5Relation(val paths: Array[String], val dataset: String,
       case "sparky://files" => fileIDs.map {
         case (id, name) =>
           new ArrayVar(name, id, dataset, HDF5Schema.FLString(id, dataset),
-            Array(1), 1, name, new File(name).length, name)
+            Array(1), 1, name, new File(name).length, name, "")
       }.toArray
 
       case "sparky://datasets" => fileIDs.map {
@@ -92,7 +92,7 @@ class HDF5Relation(val paths: Array[String], val dataset: String,
           reader.close()
           nodes collect {
             case y: ArrayVar[_] => new ArrayVar(name, id, dataset,
-              y.contains, y.dimension, 1, y.path, y.size, null)
+              y.contains, y.dimension, 1, y.path, y.size, null, "")
           }
         }
       }.toArray.flatten
@@ -104,7 +104,7 @@ class HDF5Relation(val paths: Array[String], val dataset: String,
           reader.close()
           nodes collect {
             case y: ArrayVar[_] => new ArrayVar(name, id, dataset,
-              y.contains, y.dimension, 1, y.path, y.size, y.attribute)
+              y.contains, y.dimension, 1, y.path, y.size, y.attribute, y.value)
           }
         }
       }.toArray.flatten

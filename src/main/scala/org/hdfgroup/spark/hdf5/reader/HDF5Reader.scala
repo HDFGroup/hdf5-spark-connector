@@ -37,7 +37,7 @@ with Serializable {
       val node = reader.getDataSetInformation(dataset)
       val hdfType = infoToType(dataset, node.getTypeInformation)
       Option(ArrayVar(input.toString, id, dataset, hdfType, node.getDimensions,
-        node.getNumberOfElements, dataset, 1, dataset))
+                      node.getNumberOfElements, dataset, 1, dataset, ""))
     } else {
       None
     }
@@ -62,7 +62,7 @@ with Serializable {
         try {
           val hdfType = infoToType(name, info.getTypeInformation)
           ArrayVar(input.toString, id, name, hdfType, info.getDimensions,
-            info.getNumberOfElements, name, 1, name)
+                   info.getNumberOfElements, name, 1, name, "")
         } catch {
           case _: Throwable =>
             log.warn("Unsupported datatype found (listMembers)")
@@ -70,18 +70,72 @@ with Serializable {
         }
     }
   }
-
+      
+  def getAttributeValueAsString(name: String, x: String,
+                                hdfType: HDF5Type[_]): String = {
+      var attr = ""
+      hdfType match {
+             case FLString(_,_) => {
+                  attr += reader.getStringAttribute(name, x)
+             }
+             case Int8(_,_) => {
+                  val f = reader.getByteAttribute(name, x)
+                  attr += f.toString                 
+             }
+             case UInt8(_,_) => {
+                  val f = reader.getShortAttribute(name, x)
+                  attr += f.toString                 
+             }
+             case Int16(_,_) => {
+                  val f = reader.getShortAttribute(name, x)
+                  attr += f.toString                 
+             }
+             case UInt16(_,_) => {
+                  val f = reader.getIntAttribute(name, x)
+                  attr += f.toString                 
+             }                                       
+             case Int32(_,_) => {
+                  val f = reader.getIntAttribute(name, x)
+                  attr += f.toString                 
+             }
+             case UInt32(_,_) => {
+                  val f = reader.getLongAttribute(name, x)
+                  attr += f.toString                 
+             }
+             case Int64(_,_) => {
+                  val f = reader.getLongAttribute(name, x)
+                  attr += f.toString                 
+             }                          
+             case Float32(_,_)  => {
+                  val f = reader.getFloatAttribute(name, x)
+                  attr += f.toString
+             }
+             case Float64(_,_)  => {
+                  val f = reader.getDoubleAttribute(name, x)
+                  attr += f.toString
+             }
+             
+             case _ => attr += "UNKNOWN"
+        }
+      attr
+  }
+      
   def listAttributes(name: String = "/"): HDF5Node = {
     log.trace("{}", Array[AnyRef](name))
 
     val attributeNames = reader.getAttributeNames(name).asScala
+
+    
     val attrList = attributeNames.map { x =>
       val info = reader.getAttributeInformation(name, x)
+
       try {
         val hdfType = infoToType(name, info)
+        val attr = getAttributeValueAsString(name, x, hdfType)
+        println(attr)        
         ArrayVar(input.toString, id, name, hdfType,
           info.getDimensions.map { y => y.toLong },
-          info.getNumberOfElements, name, 1, x)
+                 info.getNumberOfElements, name, 1, x, attr)
       } catch {
         case _: Throwable =>
           log.warn("Unsupported datatype found (listAttributes)")

@@ -1,3 +1,29 @@
+2017-10-20  Hyo-Kyung   <hyoklee@hdfgroup.org>
+
+	* src/test/scala/org/hdfgroup/spark/hdf5/reader/HDF5Reader.scala
+	(getAttributeValueAsString): added.
+	* src/test/scala/org/hdfgroup/spark/hdf5/AttrTests.scala: added
+	* src/test/resources/org/hdfgroup/spark/hdf5/root_group_attrs.h5: added
+	
+
+2017-10-19  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
+
+	* src/test/scala/org/hdfgroup/spark/hdf5/FunTests.scala:
+	added "Value" field.
+	* src/test/scala/org/hdfgroup/spark/hdf5/ScanExecutor.scala:
+	added value column.
+	* src/test/scala/org/hdfgroup/spark/hdf5/reader/HDF5Schema.scala;
+	added value into ArrayVar[T] class.
+	* src/test/scala/org/hdfgroup/spark/hdf5/reader/HDF5Reader.scala:
+	added value into Option(ArrayVar).
+	* src/test/scala/org/hdfgroup/spark/hdf5/SchemaConverter.scala:
+	added value into StructType.
+
+2017-10-18  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
+
+	* src/main/scala/org/hdfgroup/spark/hdf5/reader/HDF5Reader.scala
+	(listAttributes): added getAttributeValues.
+
 2017-10-17  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
 
 	* src/main/scala/org/hdfgroup/spark/hdf5/reader/DatasetReader.scala:

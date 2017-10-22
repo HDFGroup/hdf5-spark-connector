@@ -125,10 +125,10 @@ object HDF5Schema {
       // Cyclic type de-refencing error occurs.
       // Is it because return value is an abstract class of JHDF5 MDArray?
       // 
-      //reader.int32.readSlicedMDArrayBlockWithOffset(name, 
-      //                                             blockSize,
-      //                                             offset,
-      //                                             index)
+      // reader.int32.readSlicedMDArrayBlockWithOffset(name, 
+      //                                              blockSize,
+      //                                              offset,
+      //                                              index).asScala
       // TO-DO: We can try either netCDF-Java or HDF5-Java calls here to construct
       // integer array from multi-dimensional dataset slice.
         Array(0, 10, 100, 11)
@@ -235,7 +235,7 @@ object HDF5Schema {
     def flatten(): Seq[HDF5Node]
   }
 
-  case class ArrayVar[T](fileName: String, fileID: Integer, path: String, contains: HDF5Type[T], dimension: Array[Long], size: Long, realPath: String = null, realSize: Long = 0L, attribute: String) extends HDF5Node with Serializable {
+  case class ArrayVar[T](fileName: String, fileID: Integer, path: String, contains: HDF5Type[T], dimension: Array[Long], size: Long, realPath: String = null, realSize: Long = 0L, attribute: String, value: String) extends HDF5Node with Serializable {
     def flatten(): Seq[HDF5Node] = Seq(this)
   }
 

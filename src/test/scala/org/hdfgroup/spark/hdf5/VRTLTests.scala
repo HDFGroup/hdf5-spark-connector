@@ -7,7 +7,7 @@ import org.apache.spark.sql.functions.{max, sum}
 class VRTLTests extends FunTestSuite {
 
   val h5dir = FilenameUtils.getFullPathNoEndSeparator(
-    getClass.getResource("test1.h5").getPath)
+   getClass.getResource("test1.h5").getPath)
 
   test("Reading sparky://files : single file") {
     val df = sqlContext.read.hdf5(h5dir, vrtlFiles)
@@ -64,7 +64,7 @@ class VRTLTests extends FunTestSuite {
     assert(df.schema === makeSchema(vrtlAttributes))
 
     val sortedVals = df.drop("FileID").drop("ObjectPath").drop("AttributeName")
-      .drop("Dimensions").sort("ElementType").head()
+      .drop("Dimensions").drop("Value").sort("ElementType").head()
     val expected = Row("FLString")
     assert(sortedVals === expected)
   }
@@ -75,7 +75,7 @@ class VRTLTests extends FunTestSuite {
     assert(df.schema === makeSchema(vrtlAttributes))
 
     val sortedVals = df.drop("FileID").drop("ObjectPath").drop("ElementType")
-      .drop("Dimensions").sort("AttributeName").head()
+      .drop("Dimensions").drop("Value").sort("AttributeName").head()
     val expected = Row("BeginDate")
     assert(sortedVals === expected)
   }

@@ -101,7 +101,7 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
           if (cols.length == 0)
             Seq(Row(dataset.fileID, dataset.realPath, dataset.attribute,
               typeInfo.substring(0, typeInfo.indexOf('(')),
-              dataset.dimension))
+              dataset.dimension, dataset.value))
           else {
             var listRows = List[Any]()
             val typeInfo = dataset.contains.toString
@@ -115,7 +115,9 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
               else if (col == "ElementType")
                 listRows = listRows :+ typeInfo.substring(0, typeInfo.indexOf('('))
               else if (col == "Dimensions")
-                listRows = listRows :+ dataset.dimension
+                        listRows = listRows :+ dataset.dimension
+              else if (col == "Value")
+                listRows = listRows :+ dataset.value
             }
             Seq(Row.fromSeq(listRows))
           }
