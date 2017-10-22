@@ -1,3 +1,7 @@
+2017-10-21  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
+
+	* pre-release/beta/README.txt: removed non-ASCII characters.
+
 2017-10-20  Hyo-Kyung   <hyoklee@hdfgroup.org>
 
 	* src/test/scala/org/hdfgroup/spark/hdf5/reader/HDF5Reader.scala
@@ -52,5 +56,3 @@
 2017-09-30  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
 
 	* ChangeLog: added
-
-

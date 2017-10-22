@@ -2,18 +2,18 @@
 This is a Spark DataSource for HDF5 files allowing you to read your HDF5 files
 into Spark and do computations.
 
-What’s Inside:
+What's Inside:
 
-‘data’ - A couple HDF5 files that you can immediately test with.
+data/ - A couple HDF5 files that you can immediately test with.
 
-‘doc’ - A PDF which includes numerous options you can use when reading your
+doc/ - A PDF which includes numerous options you can use when reading your
         files as well as how your data/information will be constructed in a
         Spark DataFrame.
 
-‘examples’ - Two Scala scripts that you can immediately run and see 5parky in
+examples/ - Two Scala scripts that you can immediately run and see 5parky in
              action.
 
-‘lib’ - The 5parky and JHDF5 JAR files.
+lib/ - The 5parky and JHDF5 JAR files.
 
 Getting Started:
 
@@ -50,7 +50,7 @@ License:
 ****************
 
 Acknowledgements:
-Data Source built upon Josh Asplund’s original spark-hdf5 project
+Data Source built upon Josh Asplund's original spark-hdf5 project
 (https://github.com/LLNL/spark-hdf5) with LLNL.
 
 
