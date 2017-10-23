@@ -1,3 +1,14 @@
+2017-10-23  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
+
+	* src/test/scala/org/hdfgroup/spark/hdf5/AttrTests.scala:
+	added more int types attribute expected values.
+	* src/test/scala/org/hdfgroup/spark/hdf5/VRTLTests.scala:
+	changed expected file size.
+	* src/test/resources/org/hdfgroup/spark/hdf5/root_group_attrs.h5:
+	added more int types attributes.
+
+
+
 2017-10-21  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
 
 	* pre-release/beta/README.txt: removed non-ASCII characters.
@@ -8,7 +19,7 @@
 	(getAttributeValueAsString): added.
 	* src/test/scala/org/hdfgroup/spark/hdf5/AttrTests.scala: added
 	* src/test/resources/org/hdfgroup/spark/hdf5/root_group_attrs.h5: added
-	
+
 
 2017-10-19  Hyo-Kyung Lee  <hyoklee@hdfgroup.org>
 
