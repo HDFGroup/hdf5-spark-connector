@@ -170,6 +170,22 @@ object HDF5Schema {
           Array(0L,0L,0L)                                        
   }
 
+  case class UInt64(fileID: Integer, name: String) extends HDF5Type[Long] {
+    override def readArray(reader: IHDF5Reader): Array[Long] = reader.uint64.readArray(name)
+
+    override def readArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Int, offset: Long): Array[Long] =
+      reader.uint64.readArrayBlockWithOffset(name, blockSize, offset)
+
+    override def readMatrix(reader: IHDF5Reader): Array[Long] =
+      reader.uint64.readMatrix(name).flatten
+
+    override def readMatrixBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long]): Array[Long] =
+      reader.uint64.readMatrixBlockWithOffset(name, blockSize(0), blockSize(1), offset(0), offset(1)).flatten
+
+    override def readSlicedMDArrayBlockWithOffset(reader: IHDF5Reader, blockSize: Array[Int], offset: Array[Long], index: Array[Long]): Array[Long] =
+          Array(0L,0L,0L)                                        
+  }
+
   case class Float32(fileID: Integer, name: String) extends HDF5Type[Float] {
     override def readArray(reader: IHDF5Reader): Array[Float] =
       reader.float32.readArray(name)

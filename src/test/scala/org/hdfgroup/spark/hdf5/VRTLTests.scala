@@ -26,7 +26,7 @@ class VRTLTests extends FunTestSuite {
     assert(df.schema === makeSchema(vrtlFiles))
 
     val totalSize = df.agg(sum(df("FileSize"))).head
-    val expected = Row(123356044L)
+    val expected = Row(123363919L)
     checkRowsEqual(totalSize, expected)
   }
 
@@ -36,7 +36,7 @@ class VRTLTests extends FunTestSuite {
     assert(df.schema === makeSchema(vrtlDatasets))
 
     val totalCount = df.agg(sum(df("ElementCount"))).head
-    val expected = Row(69919900L)
+    val expected = Row(69921180L)
     checkRowsEqual(totalCount, expected)
   }
 
@@ -50,7 +50,7 @@ class VRTLTests extends FunTestSuite {
     checkRowsEqual(maxValue, expected)
 
     val c = df.count()
-    assert(c === 56)
+    assert(c === 64)
 
     val len = df.drop("FileID").drop("DatasetPath").drop("ElementType")
       .drop("ElementCount").sort("Dimensions").head(2).apply(1).get(0)

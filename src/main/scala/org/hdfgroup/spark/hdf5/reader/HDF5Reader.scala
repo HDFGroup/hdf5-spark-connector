@@ -105,7 +105,13 @@ with Serializable {
              case Int64(_,_) => {
                   val f = reader.getLongAttribute(name, x)
                   attr += f.toString                 
-             }                          
+             }
+
+             case UInt64(_,_) => {
+                  val f = reader.getDoubleAttribute(name, x)
+                  attr += f.toString
+             } 
+
              case Float32(_,_)  => {
                   val f = reader.getFloatAttribute(name, x)
                   attr += f.toString
@@ -168,6 +174,7 @@ with Serializable {
       case (HDF5DataClass.INTEGER, true, 4) => HDF5Schema.Int32(id, name)
       case (HDF5DataClass.INTEGER, false, 4) => HDF5Schema.UInt32(id, name)
       case (HDF5DataClass.INTEGER, true, 8) => HDF5Schema.Int64(id, name)
+      case (HDF5DataClass.INTEGER, false, 8) => HDF5Schema.UInt64(id, name)
       case (HDF5DataClass.FLOAT, true, 4) => HDF5Schema.Float32(id, name)
       case (HDF5DataClass.FLOAT, true, 8) => HDF5Schema.Float64(id, name)
       case (HDF5DataClass.STRING, signed, size) => HDF5Schema.FLString(id, name)
