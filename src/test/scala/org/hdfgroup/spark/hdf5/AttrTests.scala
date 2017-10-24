@@ -18,11 +18,14 @@ class AttrTests extends FunTestSuite {
     assert(df.schema === makeSchema(vrtlAttributes))
 
     val sortedVals = df.drop("FileID").drop("ObjectPath").drop("AttributeName")
-      .drop("Dimensions").drop("ElementType").sort("Value").head(10)
-    val expected = Array(Row("1.8446744073709552E19"), 
+      .drop("Dimensions").drop("ElementType").sort("Value").head(11)
+    val expected = Array(
+                         Row("1.79E308"), 
+                         Row("1.8446744073709552E19"), 
                          Row("127"), 
                          Row("2147483647"), 
-                         Row("255"), 
+                         Row("255"),
+                         Row("3.402823E38"),
                          Row("32767"),
                          Row("4294967295"), 
                          Row("65535"), 
