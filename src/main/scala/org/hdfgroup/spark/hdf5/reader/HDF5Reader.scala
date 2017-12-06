@@ -2,13 +2,17 @@
 // All rights reserved.
 //
 //  \author Hyo-Kyung Lee (hyoklee@hdfgroup.org)
+//
+//  \date December 4, 2017
+//  \note added array checker.
+//
 //  \date October 18, 2017
 //  \note cleaned up codes.
 
 package org.hdfgroup.spark.hdf5.reader
 
 import java.io.{Closeable, File}
-import ch.systemsx.cisd.hdf5.{HDF5DataClass, HDF5DataTypeInformation, HDF5FactoryProvider}
+import ch.systemsx.cisd.hdf5.{HDF5DataClass, HDF5DataTypeInformation,HDF5FactoryProvider}
 import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters._
@@ -74,34 +78,69 @@ with Serializable {
   def getAttributeValueAsString(name: String, x: String,
                                 hdfType: HDF5Type[_]): String = {
       var attr = ""
+      // println("getAttributeValueAsString()="+name+":"+x)
+      val info = reader.getAttributeInformation(name, x)      
+      val a = info.getDimensions()
+      // val b =  a.isInstanceOf[Array[_]]
+      
       hdfType match {
              case FLString(_,_) => {
                   attr += reader.getStringAttribute(name, x)
              }
              case Int8(_,_) => {
-                  val f = reader.getByteAttribute(name, x)
-                  attr += f.toString                 
+                  if (a.size > 0) {
+                      // println("Name="+name+" a.size="+a.size+" a(0)="+a(0))
+                      val v = reader.getByteArrayAttribute(name, x)
+                      var buf = ""
+                      for(z <- v) {
+                          buf += z.toString
+                          buf += ","
+                      }
+                      attr = buf.dropRight(1)
+                  }
+                  else {
+                      val f = reader.getByteAttribute(name, x)
+                      attr += f.toString                 
+                  }
+
              }
+             
              case UInt8(_,_) => {
-                  val f = reader.getShortAttribute(name, x)
-                  attr += f.toString                 
+                 if (a.size > 0) {
+                      val v = reader.getShortArrayAttribute(name, x)
+                      var buf = ""
+                      for(z <- v) {
+                          buf += z.toString
+                          buf += ","
+                      }
+                      attr = buf.dropRight(1)
+                 }                 
+                 else{
+                     val f = reader.getShortAttribute(name, x)
+                     attr += f.toString
+                 }
              }
+             
              case Int16(_,_) => {
                   val f = reader.getShortAttribute(name, x)
                   attr += f.toString                 
              }
+             
              case UInt16(_,_) => {
                   val f = reader.getIntAttribute(name, x)
                   attr += f.toString                 
-             }                                       
+             }
+             
              case Int32(_,_) => {
                   val f = reader.getIntAttribute(name, x)
                   attr += f.toString                 
              }
+             
              case UInt32(_,_) => {
                   val f = reader.getLongAttribute(name, x)
                   attr += f.toString                 
              }
+             
              case Int64(_,_) => {
                   val f = reader.getLongAttribute(name, x)
                   attr += f.toString                 
@@ -116,6 +155,7 @@ with Serializable {
                   val f = reader.getFloatAttribute(name, x)
                   attr += f.toString
              }
+             
              case Float64(_,_)  => {
                   val f = reader.getDoubleAttribute(name, x)
                   attr += f.toString
@@ -138,7 +178,7 @@ with Serializable {
       try {
         val hdfType = infoToType(name, info)
         val attr = getAttributeValueAsString(name, x, hdfType)
-        println(attr)        
+        // println(attr)        
         ArrayVar(input.toString, id, name, hdfType,
           info.getDimensions.map { y => y.toLong },
                  info.getNumberOfElements, name, 1, x, attr)
