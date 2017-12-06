@@ -13,6 +13,7 @@ package org.hdfgroup.spark.hdf5.reader
 
 import java.io.{Closeable, File}
 import ch.systemsx.cisd.hdf5.{HDF5DataClass, HDF5DataTypeInformation,HDF5FactoryProvider}
+import ch.systemsx.cisd.hdf5.IHDF5StringReader
 import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters._
@@ -84,9 +85,33 @@ with Serializable {
       // val b =  a.isInstanceOf[Array[_]]
       
       hdfType match {
+          
              case FLString(_,_) => {
-                  attr += reader.getStringAttribute(name, x)
+                  if (a.size > 0) {
+                      // println("FLString Name="+x+" a.size="+a.size+" a(0)="+a(0))
+                      // Reading array doesn't work with JHDF5.
+                      // <hyokyung 2017.12. 6. 12:38:43>
+                      //
+                      // var sr = reader.string()
+                      // val v = sr.getArrayAttrRaw(name, x)
+                      // val v = reader.getStringArrayAttribute(name, x)
+                      // println(v)
+                      // println(v(1))
+                      // var buf = ""
+                      // for(z <- v) {
+                      //     // buf += z.toString
+                      //     buf += z.toString
+                      //     buf += ","
+                      // }
+                      // attr = buf.dropRight(1)
+                      attr += reader.getStringAttribute(name, x)
+                      attr += ",UNSUPPORTED"
+                  }                 
+                  else {
+                      attr += reader.getStringAttribute(name, x)
+                  }
              }
+             
              case Int8(_,_) => {
                   if (a.size > 0) {
                       // println("Name="+name+" a.size="+a.size+" a(0)="+a(0))
@@ -122,43 +147,131 @@ with Serializable {
              }
              
              case Int16(_,_) => {
-                  val f = reader.getShortAttribute(name, x)
-                  attr += f.toString                 
+                 if (a.size > 0) {
+                      val v = reader.getShortArrayAttribute(name, x)
+                      var buf = ""
+                      for(z <- v) {
+                          buf += z.toString
+                          buf += ","
+                      }
+                      attr = buf.dropRight(1)
+                 }                                  
+                 else {
+                     val f = reader.getShortAttribute(name, x)
+                     attr += f.toString
+                 }
              }
              
              case UInt16(_,_) => {
-                  val f = reader.getIntAttribute(name, x)
-                  attr += f.toString                 
+                 if (a.size > 0) {
+                      val v = reader.getIntArrayAttribute(name, x)
+                      var buf = ""
+                      for(z <- v) {
+                          buf += z.toString
+                          buf += ","
+                      }
+                      attr = buf.dropRight(1)
+                 }     
+                 else {
+                     val f = reader.getIntAttribute(name, x)
+                     attr += f.toString
+                 }
              }
              
              case Int32(_,_) => {
-                  val f = reader.getIntAttribute(name, x)
-                  attr += f.toString                 
+                 if (a.size > 0) {
+                      val v = reader.getIntArrayAttribute(name, x)
+                      var buf = ""
+                      for(z <- v) {
+                          buf += z.toString
+                          buf += ","
+                      }
+                      attr = buf.dropRight(1)
+                 }                      
+                 else {
+                     val f = reader.getIntAttribute(name, x)
+                     attr += f.toString
+                 }
              }
              
              case UInt32(_,_) => {
-                  val f = reader.getLongAttribute(name, x)
-                  attr += f.toString                 
+                 if (a.size > 0) {
+                      val v = reader.getLongArrayAttribute(name, x)
+                      var buf = ""
+                      for(z <- v) {
+                          buf += z.toString
+                          buf += ","
+                      }
+                      attr = buf.dropRight(1)
+                 }
+                 else {
+                     val f = reader.getLongAttribute(name, x)
+                     attr += f.toString
+                 }
              }
              
              case Int64(_,_) => {
-                  val f = reader.getLongAttribute(name, x)
-                  attr += f.toString                 
+                 if (a.size > 0) {
+                      val v = reader.getLongArrayAttribute(name, x)
+                      var buf = ""
+                      for(z <- v) {
+                          buf += z.toString
+                          buf += ","
+                      }
+                      attr = buf.dropRight(1)
+                 }                 
+                 else {
+                     val f = reader.getLongAttribute(name, x)
+                     attr += f.toString
+                 }
              }
 
              case UInt64(_,_) => {
-                  val f = reader.getDoubleAttribute(name, x)
-                  attr += f.toString
+                 if (a.size > 0) {
+                      val v = reader.getDoubleArrayAttribute(name, x)
+                      var buf = ""
+                      for(z <- v) {
+                          buf += z.toString
+                          buf += ","
+                      }
+                      attr = buf.dropRight(1)
+                 }                                  
+                 else {
+                     val f = reader.getDoubleAttribute(name, x)
+                     attr += f.toString
+                 }
              } 
 
              case Float32(_,_)  => {
-                  val f = reader.getFloatAttribute(name, x)
-                  attr += f.toString
+                 if (a.size > 0) {
+                      val v = reader.getFloatArrayAttribute(name, x)
+                      var buf = ""
+                      for(z <- v) {
+                          buf += z.toString
+                          buf += ","
+                      }
+                      attr = buf.dropRight(1)
+                 }                                  
+                 else{
+                     val f = reader.getFloatAttribute(name, x)
+                     attr += f.toString
+                 }
              }
              
              case Float64(_,_)  => {
-                  val f = reader.getDoubleAttribute(name, x)
-                  attr += f.toString
+                 if (a.size > 0) {
+                      val v = reader.getDoubleArrayAttribute(name, x)
+                      var buf = ""
+                      for(z <- v) {
+                          buf += z.toString
+                          buf += ","
+                      }
+                      attr = buf.dropRight(1)
+                 }                                            
+                 else{
+                     val f = reader.getDoubleAttribute(name, x)
+                     attr += f.toString
+                 }
              }
              
              case _ => attr += "UNKNOWN"
