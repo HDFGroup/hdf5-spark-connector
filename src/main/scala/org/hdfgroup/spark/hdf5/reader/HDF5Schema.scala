@@ -17,6 +17,26 @@ import ch.systemsx.cisd.base.mdarray._
 
 object HDF5Schema {
 
+  sealed trait HDF5Node {
+    val fileID: Integer
+    val path: String
+
+    def flatten(): Seq[HDF5Node]
+  }
+
+  case class ArrayVar[T](fileName: String, fileID: Integer, path: String, contains: HDF5Type[T], dimension: Array[Long], size: Long, realPath: String = null, realSize: Long = 0L, attribute: String, value: String) extends HDF5Node with Serializable {
+    def flatten(): Seq[HDF5Node] = Seq(this)
+  }
+
+  case class Group(fileID: Integer, path: String, children: Seq[HDF5Node]) extends HDF5Node {
+    def flatten(): Seq[HDF5Node] = this +: children.flatMap(x => x.flatten())
+  }
+
+  case class GenericNode(fileID: Integer, path: String) extends HDF5Node {
+    def flatten(): Seq[HDF5Node] = Seq(this)
+  }
+
+
   // TODO: Needs reference, time, unsigned, compound, enumeration
   //          case COMPOUND
   sealed trait HDF5Type[T] {
@@ -242,25 +262,6 @@ object HDF5Schema {
       throw new SparkException("'readSlicedMDArrayBlockWithOffset' does not support strings.")
       Array[String]("")
      }
-  }
-
-  sealed trait HDF5Node {
-    val fileID: Integer
-    val path: String
-
-    def flatten(): Seq[HDF5Node]
-  }
-
-  case class ArrayVar[T](fileName: String, fileID: Integer, path: String, contains: HDF5Type[T], dimension: Array[Long], size: Long, realPath: String = null, realSize: Long = 0L, attribute: String, value: String) extends HDF5Node with Serializable {
-    def flatten(): Seq[HDF5Node] = Seq(this)
-  }
-
-  case class Group(fileID: Integer, path: String, children: Seq[HDF5Node]) extends HDF5Node {
-    def flatten(): Seq[HDF5Node] = this +: children.flatMap(x => x.flatten())
-  }
-
-  case class GenericNode(fileID: Integer, path: String) extends HDF5Node {
-    def flatten(): Seq[HDF5Node] = Seq(this)
   }
 
 }
