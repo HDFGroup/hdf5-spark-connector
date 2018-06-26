@@ -20,7 +20,7 @@ class HyperslabTests extends FunTestSuite {
   val int8test = "/datatypes/int8"
   
   test("Testing 1d hyperslab") {
-    val df = sqlContext.read.option("window size", "2").option("block", "3").
+    val df = spark.read.option("window size", "2").option("block", "3").
       option("start", "2").hdf5(h5file, int8test)
 
     assert(df.schema === makeSchema(ByteType))
@@ -34,7 +34,7 @@ class HyperslabTests extends FunTestSuite {
   val ssttest = "/HDFEOS/GRIDS/NCEP/Data Fields/SST"
 
   test("Testing 2d hyperslab") {
-    val df = sqlContext.read.option("window size", "5").option("block", "3,3").
+    val df = spark.read.option("window size", "5").option("block", "3,3").
       option("start", "2,2").hdf5(gfile, ssttest)
 
     assert(df.schema === makeSchema(FloatType))
@@ -48,7 +48,7 @@ class HyperslabTests extends FunTestSuite {
   val mdtest = "/dimensionality/3dim"
   
   test("Testing 3d hyperslab") {
-    val df = sqlContext.read.option("window size", "10")
+    val df = spark.read.option("window size", "10")
     .option("block", "2,2")
     .option("start", "0,0")
     .option("index", "-1,-1,0")

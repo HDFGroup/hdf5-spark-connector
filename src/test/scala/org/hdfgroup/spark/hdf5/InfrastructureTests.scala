@@ -12,7 +12,7 @@ class InfrastructureTests extends FunTestSuite {
   val multiDataset = "/multi"
 
   test("Reading multiple files") {
-    val df = sqlContext.read.hdf5(h5dir, multiDataset).drop("FileID")
+    val df = spark.read.hdf5(h5dir, multiDataset).drop("FileID")
     val expected = (0 until 30).map { x => Row(x % 10, x) }
 
     checkEqual(df, expected)
@@ -21,11 +21,11 @@ class InfrastructureTests extends FunTestSuite {
   val int8test = "/datatypes/int8"
 
   test("Read files in chunks") {
-    val evenchunkeddf = sqlContext.read
+    val evenchunkeddf = spark.read
       .option("window size", 5.toString)
       .hdf5(h5file, int8test).drop("FileID")
 
-    val oddchunkeddf = sqlContext.read
+    val oddchunkeddf = spark.read
       .option("window size", 3.toString)
       .hdf5(h5file, int8test).drop("FileID")
 
@@ -41,9 +41,9 @@ class InfrastructureTests extends FunTestSuite {
   val path = "/Users/Alan/IdeaProjects/5parky/examples/GSSTF_NCEP_mini"
 
   test("Testing non-recursion") {
-    val df = sqlContext.read.option("recursion", "false").
+    val df = spark.read.option("recursion", "false").
       option("extension", "he5").hdf5(path, ssttest)
-    val df2 = sqlContext.read.option("extension", "he5").hdf5(path, ssttest)
+    val df2 = spark.read.option("extension", "he5").hdf5(path, ssttest)
     val expectedSchema = StructType(Seq(
       StructField("fileID", IntegerType, nullable = false),
       StructField("index", LongType, nullable = false),

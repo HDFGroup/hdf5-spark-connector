@@ -12,16 +12,21 @@ abstract class FunTestSuite extends FunSuite with BeforeAndAfterAll {
 
   private val sparkConf = new SparkConf()
 
-  protected var sqlContext: SQLContext = _
+  protected var spark: SparkSession = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    sqlContext = new SQLContext(new SparkContext("local[2]", "HDF5Suite", sparkConf))
+    spark = SparkSession
+      .builder()
+      .master("local[4]")
+      .appName("HDF5Suite")
+      .config(sparkConf)
+      .getOrCreate()
   }
 
   override protected def afterAll(): Unit = {
     try {
-      sqlContext.sparkContext.stop()
+      spark.sparkContext.stop()
     } finally {
       super.afterAll()
     }
