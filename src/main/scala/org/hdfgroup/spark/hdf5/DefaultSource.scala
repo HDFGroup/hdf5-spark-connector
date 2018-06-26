@@ -10,30 +10,48 @@ class DefaultSource extends RelationProvider {
   private val log = LoggerFactory.getLogger(getClass)
 
   override def createRelation(
-    sqlContext: SQLContext,
-    parameters: Map[String, String]
-  ): BaseRelation = {
-    log.trace("{} {}", Array[AnyRef](sqlContext, parameters))
+                 sqlContext: SQLContext,
+                 parameters: Map[String, String]): BaseRelation = {
+      log.trace("{} {}", Array[AnyRef](sqlContext, parameters))
 
-    val paths = parameters.get("path") match {
-      case Some(x) => x.split(",").map(_.trim)
-      case None => sys.error("'path' must be specified.")
-    }
+      // A comma-separated list of file and directory paths
+      val paths = parameters.get("path") match {
+        case Some(x) => x.split(",").map(_.trim)
+        case None => sys.error("'path' must be specified.")
+      }
 
-    val dataset = parameters.get("dataset") match {
-      case Some(x) => x
-      case None => throw new SparkException("You must provide a path to the dataset")
-    }
+      // The HDF5 path name of a dataset
+      val dataset = parameters.get("dataset") match {
+        case Some(x) => x
+        case None =>
+          throw new SparkException("You must provide a path to the dataset")
+      }
 
-    // Five options that users can specify for reads
-    val extensions = parameters.getOrElse("extension", "h5").split(",").map(_.trim)
-    val chunkSize = parameters.getOrElse("window size", "10000").toInt
-    val start = parameters.getOrElse("start", "-1").split(",").map(_.toLong)
-    val block = parameters.getOrElse("block", "-1").split(",").map(_.toInt)
-    val index = parameters.getOrElse("index", "-1").split(",").map(_.toLong)
-    val recursion = parameters.getOrElse("recursion", "true").toBoolean
-    new HDF5Relation(paths, dataset, extensions, chunkSize, start, block, 
-                     index, recursion)(sqlContext)
+      // Six options that users can specify for reads
+
+      // The HDF5 file extensions to probe.
+      val extensions =
+        parameters.getOrElse("extension", "h5").split(",").map(_.trim)
+      // The I/O window size in number of elements.
+      val chunkSize = parameters.getOrElse("window size", "10000").toInt
+      // The hyperslab offset.
+      val start = parameters.getOrElse("start", "-1").split(",").map(_.toLong)
+      // The hyperslab block size.
+      val block = parameters.getOrElse("block", "-1").split(",").map(_.toInt)
+      // The block index.
+      val index = parameters.getOrElse("index", "-1").split(",").map(_.toLong)
+      // The recursion behavior for directories.
+      val recursion = parameters.getOrElse("recursion", "true").toBoolean
+
+      new HDF5Relation(
+            paths,
+            dataset,
+            extensions,
+            chunkSize,
+            start,
+            block,
+            index,
+            recursion)(sqlContext)
   }
 }
 
