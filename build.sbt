@@ -6,6 +6,8 @@ organization := "org.hdfgroup"
 // scalaVersion := "2.12.4"
 scalaVersion := "2.11.8"
 
+scalacOptions += "-deprecation"
+
 crossScalaVersions := Seq("2.10.6", "2.11.8")
 // crossScalaVersions := Seq("2.12.4", "2.11.8")
 
