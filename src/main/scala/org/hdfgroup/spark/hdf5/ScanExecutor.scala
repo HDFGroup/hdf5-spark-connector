@@ -35,7 +35,7 @@ object ScanExecutor {
       ioSize: Int,
       blockNumber: Long = 0,
       cols: Array[String])
-  extends ScanItem
+    extends ScanItem
 
   case class BoundedMDScan(
       dataset: ArrayVar[_],
@@ -43,7 +43,7 @@ object ScanExecutor {
       blockDimensions: Array[Int],
       offset: Array[Long],
       cols: Array[String])
-  extends ScanItem
+    extends ScanItem
 
   case class SlicedMDScan(
       dataset: ArrayVar[_],
@@ -52,7 +52,7 @@ object ScanExecutor {
       offset: Array[Long],
       index: Array[Long],
       cols: Array[String])
-  extends ScanItem      
+    extends ScanItem      
 
 }
 
@@ -89,6 +89,11 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
     log.trace("{}", Array[AnyRef](scanItem))
 
     scanItem match {
+
+      //========================================================================
+      // UnboundedScan
+      //========================================================================
+
       case UnboundedScan(dataset, _, cols) => dataset.path match {
 
         // Check for virtual tables first
@@ -220,6 +225,10 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
         }
       } // case UnBoundedScan
 
+      //========================================================================
+      // BoundedScan (1D datasets)
+      //========================================================================
+
       case BoundedScan(dataset, ioSize, offset, cols) => {
         val col =
           if (cols.length == 0) dataSchema
@@ -269,7 +278,11 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
           else
             Seq(Row(fileID))
         }
-      }
+      } // BoundedScan
+
+      //========================================================================
+      // BoundedMDScan (2D+ datasets)
+      //========================================================================
 
       case BoundedMDScan(dataset, ioSize, blockDimensions, offset, cols) => {
         val col =
@@ -344,7 +357,11 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
           else
             Seq(Row(fileID))
         }
-      } // case BoundedMDScan()
+      } // BoundedMDScan
+
+      //========================================================================
+      // SlicedMDScan
+      //========================================================================
       
       case SlicedMDScan(
           dataset,
@@ -355,13 +372,14 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
           cols) => {
         val dataReader = newDatasetReader(dataset)(
             _.readDataset(blockDimensions, offset, index))
-          //  This is not complete yet. <hyokyung 2017.10.18. 08:06:06>
-          //  The goal is to test whether readSlicedMDArrayBlockWithOffset() function
-          //  in HDF5Schema.scala return the right subsetted array of integers.
+          // This is not complete yet. <hyokyung 2017.10.18. 08:06:06>
+          // The goal is to test whether readSlicedMDArrayBlockWithOffset()
+          // function in HDF5Schema.scala return the right subsetted array of
+          // integers.
           dataReader.map {
             x => val l:Long=x.asInstanceOf[Number].longValue;  Row(l)
           }
-      } // case SlicedMDScan
+      } // SlicedMDScan
     }
   }
 }
