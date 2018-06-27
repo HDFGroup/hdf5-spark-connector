@@ -24,17 +24,22 @@ object HDF5Schema {
     def flatten(): Seq[HDF5Node]
   }
 
+  // This is one of the most overloaded/abused primitives.
+  // It's used to shuttle real datasets, "sparky://..." datasets,
+  // attributes, etc.
+  // TODO: Refactor it!
+
   case class ArrayVar[T](
-      fileName: String,
-      fileID: Integer,
-      path: String,
-      contains: HDF5Type[T],
-      dimension: Array[Long],
-      size: Long,
-      realPath: String = null,
-      realSize: Long = 0L,
-      attribute: String,
-      value: String)
+      fileName: String,        // The (absolute) HDF5 file path
+      fileID: Integer,         // Randomly assigned file ID
+      path: String,            // The dataset HDF5 path name (or sparky://... )
+      contains: HDF5Type[T],   // Element type representation
+      dimension: Array[Long],  // The dataset shape
+      size: Long,              // The number of dataset elements
+      realPath: String = null, // ???
+      realSize: Long = 0L,     // ???
+      attribute: String,       // The attribute name
+      value: String)           // A string representation of the attribute value
     extends HDF5Node
     with Serializable {
       def flatten(): Seq[HDF5Node] = Seq(this)
