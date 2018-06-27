@@ -8,8 +8,6 @@ import org.apache.spark.sql.types._
 class STACTests extends FunTestSuite {
 
   val stm3file = getClass.getResource("LAAA.h5").toString
-  val stm3dir = FilenameUtils.getFullPathNoEndSeparator(
-    getClass.getResource("LAAA.h5").getPath)
 
   val bidtest = "/LAAA/Quotes/Bid"
   val qtrtest = "/LAAA/Quarter/QuotesStartBlock"

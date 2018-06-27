@@ -7,9 +7,6 @@ import org.apache.spark.sql.types._
 
 class LinearizationTests extends FunTestSuite {
 
-  val h5dir = FilenameUtils.getFullPathNoEndSeparator(
-    getClass.getResource("test1.h5").getPath)
-
   val twodimfile = getClass.getResource("test1.h5").toString
   val twodimtest = "/dimensionality/2dim"
 

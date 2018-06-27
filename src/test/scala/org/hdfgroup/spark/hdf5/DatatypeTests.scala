@@ -7,8 +7,6 @@ import org.apache.spark.sql.types._
 class DatatypeTests extends FunTestSuite {
 
   val h5file = getClass.getResource("test1.h5").toString
-  val h5dir = FilenameUtils.getFullPathNoEndSeparator(
-    getClass.getResource("test1.h5").getPath)
 
   val int8test = "/datatypes/int8"
   val int16test = "/datatypes/int16"
