@@ -161,199 +161,48 @@ with Serializable {
     // println("getAttributeValueAsString()="+name+":"+x)
     val info = reader.getAttributeInformation(name, x)      
     val a = info.getDimensions()
-    // val b =  a.isInstanceOf[Array[_]]
 
-    hdfType match {
-
-      case FLString(_,_) => {
-        if (a.size > 0) {
-        // println("FLString Name="+x+" a.size="+a.size+" a(0)="+a(0))
-        // Reading array doesn't work with JHDF5.
-        // <hyokyung 2017.12. 6. 12:38:43>
-        //
-        // var sr = reader.string()
-        // val v = sr.getArrayAttrRaw(name, x)
-        // val v = reader.getStringArrayAttribute(name, x)
-        // println(v)
-        // println(v(1))
-        // var buf = ""
-        // for(z <- v) {
-        //     // buf += z.toString
-        //     buf += z.toString
-        //     buf += ","
-        // }
-        // attr = buf.dropRight(1)
-        attr += reader.getStringAttribute(name, x)
-        attr += ",UNSUPPORTED"
-        }
-        else {
-          attr += reader.getStringAttribute(name, x)
-        }
+    if (a.size > 0) {
+      val v = hdfType match {
+        case Int8(_,_) => reader.getByteArrayAttribute(name, x)
+        case UInt8(_,_) => reader.getShortArrayAttribute(name, x)
+        case Int16(_,_) => reader.getShortArrayAttribute(name, x)
+        case UInt16(_,_) => reader.getIntArrayAttribute(name, x)
+        case Int32(_,_) => reader.getIntArrayAttribute(name, x)
+        case UInt32(_,_) => reader.getLongArrayAttribute(name, x)
+        case Int64(_,_) => reader.getLongArrayAttribute(name, x)
+        case UInt64(_,_) => reader.getDoubleArrayAttribute(name, x)
+        case Float32(_,_) => reader.getFloatArrayAttribute(name, x)
+        case Float64(_,_) => reader.getDoubleArrayAttribute(name, x)
+        case FLString(_,_) =>
+          Array(reader.getStringAttribute(name, x),"UNSUPPORTED")
+        case _ => Array("UNKNOWN")
       }
-
-      case Int8(_,_) => {
-        if (a.size > 0) {
-          // println("Name="+name+" a.size="+a.size+" a(0)="+a(0))
-          val v = reader.getByteArrayAttribute(name, x)
-          var buf = ""
-          for(z <- v) {
-            buf += z.toString
-            buf += ","
-          }
-          attr = buf.dropRight(1)
-        }
-        else {
-          val f = reader.getByteAttribute(name, x)
-            attr += f.toString                 
-        }
+      var buf = ""
+      for(z <- v) {
+        buf += z.toString
+        buf += ","
       }
-
-      case UInt8(_,_) => {
-        if (a.size > 0) {
-          val v = reader.getShortArrayAttribute(name, x)
-          var buf = ""
-          for(z <- v) {
-            buf += z.toString
-              buf += ","
-          }
-          attr = buf.dropRight(1)
-        }
-        else{
-          val f = reader.getShortAttribute(name, x)
-            attr += f.toString
-        }
-      }
-
-      case Int16(_,_) => {
-        if (a.size > 0) {
-          val v = reader.getShortArrayAttribute(name, x)
-          var buf = ""
-          for(z <- v) {
-            buf += z.toString
-              buf += ","
-          }
-          attr = buf.dropRight(1)
-        }
-        else {
-          val f = reader.getShortAttribute(name, x)
-            attr += f.toString
-        }
-      }
-
-      case UInt16(_,_) => {
-        if (a.size > 0) {
-          val v = reader.getIntArrayAttribute(name, x)
-          var buf = ""
-          for(z <- v) {
-            buf += z.toString
-              buf += ","
-          }
-          attr = buf.dropRight(1)
-        }
-        else {
-          val f = reader.getIntAttribute(name, x)
-            attr += f.toString
-        }
-      }
-
-      case Int32(_,_) => {
-        if (a.size > 0) {
-          val v = reader.getIntArrayAttribute(name, x)
-          var buf = ""
-          for(z <- v) {
-            buf += z.toString
-              buf += ","
-          }
-          attr = buf.dropRight(1)
-        }
-        else {
-          val f = reader.getIntAttribute(name, x)
-            attr += f.toString
-        }
-      }
-
-      case UInt32(_,_) => {
-        if (a.size > 0) {
-          val v = reader.getLongArrayAttribute(name, x)
-          var buf = ""
-          for(z <- v) {
-            buf += z.toString
-              buf += ","
-          }
-          attr = buf.dropRight(1)
-        }
-        else {
-          val f = reader.getLongAttribute(name, x)
-            attr += f.toString
-        }
-      }
-
-      case Int64(_,_) => {
-        if (a.size > 0) {
-          val v = reader.getLongArrayAttribute(name, x)
-          var buf = ""
-          for(z <- v) {
-            buf += z.toString
-            buf += ","
-          }
-          attr = buf.dropRight(1)
-        }
-        else {
-          val f = reader.getLongAttribute(name, x)
-            attr += f.toString
-        }
-      }
-
-      case UInt64(_,_) => {
-        if (a.size > 0) {
-          val v = reader.getDoubleArrayAttribute(name, x)
-          var buf = ""
-          for(z <- v) {
-            buf += z.toString
-            buf += ","
-          }
-          attr = buf.dropRight(1)
-        }
-        else {
-          val f = reader.getDoubleAttribute(name, x)
-            attr += f.toString
-        }
-      } 
-
-      case Float32(_,_)  => {
-        if (a.size > 0) {
-          val v = reader.getFloatArrayAttribute(name, x)
-          var buf = ""
-          for(z <- v) {
-            buf += z.toString
-            buf += ","
-          }
-          attr = buf.dropRight(1)
-        } 
-        else{
-          val f = reader.getFloatAttribute(name, x)
-            attr += f.toString
-        }
-      }
-
-      case Float64(_,_)  => {
-        if (a.size > 0) {
-          val v = reader.getDoubleArrayAttribute(name, x)
-          var buf = ""
-          for(z <- v) {
-            buf += z.toString
-            buf += ","
-          }
-          attr = buf.dropRight(1)
-        }
-        else{
-          val f = reader.getDoubleAttribute(name, x)
-            attr += f.toString
-        }
-      }
-
-      case _ => attr += "UNKNOWN"
+      attr = buf.dropRight(1)
     }
+    else {
+      val f = hdfType match {
+        case Int8(_,_) => reader.getByteAttribute(name, x)
+        case UInt8(_,_) => reader.getShortAttribute(name, x)
+        case Int16(_,_) => reader.getShortAttribute(name, x)
+        case UInt16(_,_) => reader.getIntAttribute(name, x)
+        case Int32(_,_) => reader.getIntAttribute(name, x)
+        case UInt32(_,_) => reader.getLongAttribute(name, x)
+        case Int64(_,_) => reader.getLongAttribute(name, x)
+        case UInt64(_,_) => reader.getDoubleAttribute(name, x)
+        case Float32(_,_) => reader.getFloatAttribute(name, x)
+        case Float64(_,_) => reader.getDoubleAttribute(name, x)
+        case FLString(_,_) => reader.getStringAttribute(name, x)
+        case _ => "UNKNOWN"
+      }
+      attr += f.toString
+    }
+
     attr
   }
 }
