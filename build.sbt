@@ -5,6 +5,7 @@ organization := "org.hdfgroup"
 // scalaHome := Some(file("/Users/hyoklee/scala/build/pack/"))
 // scalaVersion := "2.12.4"
 scalaVersion := "2.11.8"
+ensimeScalaVersion in ThisBuild := "2.11.8"
 
 scalacOptions += "-deprecation"
 
@@ -14,7 +15,7 @@ crossScalaVersions := Seq("2.10.6", "2.11.8")
 spName := "hdfgroup/5parky"
 
 // sparkVersion := "2.0.0"
-sparkVersion := "2.2.0"
+sparkVersion := "2.3.2"
 
 val testSparkVersion = settingKey[String]("The version of Spark to test against.")
 

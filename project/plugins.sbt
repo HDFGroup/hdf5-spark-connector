@@ -11,3 +11,5 @@ addSbtPlugin("org.spark-packages" % "sbt-spark-package" % "0.2.5")
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
 
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
+
+addSbtPlugin("org.ensime" % "sbt-ensime" % "2.5.1")
