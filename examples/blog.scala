@@ -11,13 +11,12 @@ import org.apache.spark.sql.functions._
 val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
 val dirName = "/mnt/wrk/hdftest/GSSTF_NCEP.3/2000"
-val pathName = "/Users/Alan/IdeaProjects/5parky/examples/GSSTF_NCEP_mini"
 val varName = "/HDFEOS/GRIDS/NCEP/Data Fields/Tair_2m"
 
 val df = sqlContext.read.
   option("extension", "he5").
   option("window size", "200000").
-  hdf5(pathName, varName)
+  hdf5(dirName, varName)
 
 // df.write.avro("df.avro")
 
@@ -51,10 +50,10 @@ val df2 = sqlContext.sql(
 df2.show(20)
 
 val idMap = sqlContext.read.
-  option("extension", "he5").hdf5(pathName, "sparky://files")
+  option("extension", "he5").hdf5(dirName, "sparky://files")
 
-val dateMap = idMap.drop("file size").
-  withColumn("fileName", getDate($"fileName"))
+val dateMap = idMap.drop("FileSize").
+  withColumn("fileName", getDate($"FilePath"))
 
 val meanEtMedian = df2.
   join(dateMap, "fileID").
