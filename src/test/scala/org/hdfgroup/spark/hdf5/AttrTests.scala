@@ -36,7 +36,6 @@ class AttrTests extends FunTestSuite {
         Row("4294967295"),
         Row("65535"),
         Row("9223372036854775807"),
-        Row("abc,UNSUPPORTED"),
         Row("test"))
     assert(sortedVals === expected)
   }

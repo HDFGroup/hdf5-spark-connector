@@ -18,7 +18,7 @@ import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters._
 
-class HDF5Reader(val input: File, val id: Integer) extends Closeable 
+class HDF5Reader(val input: File, val id: Integer) extends Closeable
 with Serializable {
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -101,15 +101,15 @@ with Serializable {
   def listAttributes(name: String = "/"): HDF5Node = {
     log.trace("{}", Array[AnyRef](name))
 
-    val attributeNames = reader.getAttributeNames(name).asScala
-    
+    val attributeNames = reader.`object`().getAttributeNames(name).asScala
+
     val attrList = attributeNames.map {
-      x => val info = reader.getAttributeInformation(name, x)
+      x => val info = reader.`object`().getAttributeInformation(name, x)
 
       try {
         val hdfType = infoToType(name, info)
         val attr = getAttributeValueAsString(name, x, hdfType)
-        // println(attr)        
+        // println(attr)
         ArrayVar(input.toString, id, name, hdfType,
           info.getDimensions.map { y => y.toLong },
                  info.getNumberOfElements, name, 1, x, attr)
@@ -152,30 +152,29 @@ with Serializable {
       case _ => throw new NotImplementedError("Type not supported")
     }
   }
-      
+
   def getAttributeValueAsString(
       name: String,
       x: String,
       hdfType: HDF5Type[_]): String = {
     var attr = ""
     // println("getAttributeValueAsString()="+name+":"+x)
-    val info = reader.getAttributeInformation(name, x)      
+    val info = reader.`object`().getAttributeInformation(name, x)
     val a = info.getDimensions()
 
     if (a.size > 0) {
       val v = hdfType match {
-        case Int8(_,_) => reader.getByteArrayAttribute(name, x)
-        case UInt8(_,_) => reader.getShortArrayAttribute(name, x)
-        case Int16(_,_) => reader.getShortArrayAttribute(name, x)
-        case UInt16(_,_) => reader.getIntArrayAttribute(name, x)
-        case Int32(_,_) => reader.getIntArrayAttribute(name, x)
-        case UInt32(_,_) => reader.getLongArrayAttribute(name, x)
-        case Int64(_,_) => reader.getLongArrayAttribute(name, x)
-        case UInt64(_,_) => reader.getDoubleArrayAttribute(name, x)
-        case Float32(_,_) => reader.getFloatArrayAttribute(name, x)
-        case Float64(_,_) => reader.getDoubleArrayAttribute(name, x)
-        case FLString(_,_) =>
-          Array(reader.getStringAttribute(name, x),"UNSUPPORTED")
+        case Int8(_,_) => reader.int8().getArrayAttr(name, x)
+        case UInt8(_,_) => reader.int16().getArrayAttr(name, x)
+        case Int16(_,_) => reader.int16().getArrayAttr(name, x)
+        case UInt16(_,_) => reader.int32().getArrayAttr(name, x)
+        case Int32(_,_) => reader.int32().getArrayAttr(name, x)
+        case UInt32(_,_) => reader.int64().getArrayAttr(name, x)
+        case Int64(_,_) => reader.int64().getArrayAttr(name, x)
+        case UInt64(_,_) => reader.float64().getArrayAttr(name, x)
+        case Float32(_,_) => reader.float32().getArrayAttr(name, x)
+        case Float64(_,_) => reader.float64().getArrayAttr(name, x)
+        case FLString(_,_) => reader.string().getArrayAttr(name, x)
         case _ => Array("UNKNOWN")
       }
       var buf = ""
@@ -187,17 +186,17 @@ with Serializable {
     }
     else {
       val f = hdfType match {
-        case Int8(_,_) => reader.getByteAttribute(name, x)
-        case UInt8(_,_) => reader.getShortAttribute(name, x)
-        case Int16(_,_) => reader.getShortAttribute(name, x)
-        case UInt16(_,_) => reader.getIntAttribute(name, x)
-        case Int32(_,_) => reader.getIntAttribute(name, x)
-        case UInt32(_,_) => reader.getLongAttribute(name, x)
-        case Int64(_,_) => reader.getLongAttribute(name, x)
-        case UInt64(_,_) => reader.getDoubleAttribute(name, x)
-        case Float32(_,_) => reader.getFloatAttribute(name, x)
-        case Float64(_,_) => reader.getDoubleAttribute(name, x)
-        case FLString(_,_) => reader.getStringAttribute(name, x)
+        case Int8(_,_) => reader.int8().getAttr(name, x)
+        case UInt8(_,_) => reader.int16().getAttr(name, x)
+        case Int16(_,_) => reader.int16().getAttr(name, x)
+        case UInt16(_,_) => reader.int32().getAttr(name, x)
+        case Int32(_,_) => reader.int32().getAttr(name, x)
+        case UInt32(_,_) => reader.int64().getAttr(name, x)
+        case Int64(_,_) => reader.int64().getAttr(name, x)
+        case UInt64(_,_) => reader.float64().getAttr(name, x)
+        case Float32(_,_) => reader.float32().getAttr(name, x)
+        case Float64(_,_) => reader.float64().getAttr(name, x)
+        case FLString(_,_) => reader.string().getAttr(name, x)
         case _ => "UNKNOWN"
       }
       attr += f.toString
