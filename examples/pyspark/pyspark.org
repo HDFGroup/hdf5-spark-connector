@@ -1,0 +1,49 @@
+
+#+PROPERTY: header-args :eval never-export :exports both :session :results raw drawer
+
+#+BEGIN_SRC ipython :results output
+conf = sc.getConf()
+conf.set('spark.driver.memory', '16g')
+
+sqlc = SQLContext(sc)
+
+opts = {
+ 'dataset': 'sparky://files',
+ 'path': '/mnt/wrk/hdftest/GSSTF_NCEP.3/2000',
+ 'extension': 'he5'
+}
+
+df = sqlc.read.format('org.hdfgroup.spark.hdf5').options(**opts).load()
+
+df.show()
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
++------+--------------------+--------+
+|FileID|            FilePath|FileSize|
++------+--------------------+--------+
+|    69|/mnt/wrk/hdftest/...|16631632|
+|   365|/mnt/wrk/hdftest/...|16631632|
+|   138|/mnt/wrk/hdftest/...|16631632|
+|   101|/mnt/wrk/hdftest/...|16631632|
+|   347|/mnt/wrk/hdftest/...|16631632|
+|   333|/mnt/wrk/hdftest/...|16631632|
+|   249|/mnt/wrk/hdftest/...|16631632|
+|   234|/mnt/wrk/hdftest/...|16631632|
+|     0|/mnt/wrk/hdftest/...|16631632|
+|    88|/mnt/wrk/hdftest/...|16631632|
+|   352|/mnt/wrk/hdftest/...|16631632|
+|   170|/mnt/wrk/hdftest/...|16631632|
+|   115|/mnt/wrk/hdftest/...|16631632|
+|   217|/mnt/wrk/hdftest/...|16631632|
+|   276|/mnt/wrk/hdftest/...|16631632|
+|   308|/mnt/wrk/hdftest/...|16631632|
+|     5|/mnt/wrk/hdftest/...|16631632|
+|   120|/mnt/wrk/hdftest/...|16631632|
+|   247|/mnt/wrk/hdftest/...|16631632|
+|   269|/mnt/wrk/hdftest/...|16631632|
++------+--------------------+--------+
+only showing top 20 rows
+
+:END:
