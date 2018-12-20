@@ -1,49 +1,460 @@
+#+TITLE: A Spark Connector for HDF5
+#+AUTHOR: Gerd Heber, The HDF Group
+#+DATE: <2018-11-20 Tue>
 
 #+PROPERTY: header-args :eval never-export :exports both :session :results raw drawer
 
-#+BEGIN_SRC ipython :results output
-conf = sc.getConf()
-conf.set('spark.driver.memory', '16g')
 
-sqlc = SQLContext(sc)
+* Versions
 
-opts = {
- 'dataset': 'sparky://files',
- 'path': '/mnt/wrk/hdftest/GSSTF_NCEP.3/2000',
- 'extension': 'he5'
-}
+  #+BEGIN_SRC emacs-lisp -n
+  (princ (concat
+          (format "Emacs version: %s\n"
+                  (emacs-version))
+          (format "org version: %s\n"
+                  (org-version))))
+  #+END_SRC
 
-df = sqlc.read.format('org.hdfgroup.spark.hdf5').options(**opts).load()
+  #+RESULTS:
+  :RESULTS:
+  Emacs version: GNU Emacs 26.1 (build 2, x86_64-pc-linux-gnu)
+   of 2018-08-17
+  org version: 9.1.14
+  :END:
 
-df.show()
-#+END_SRC
 
-#+RESULTS:
-:RESULTS:
-+------+--------------------+--------+
-|FileID|            FilePath|FileSize|
-+------+--------------------+--------+
-|    69|/mnt/wrk/hdftest/...|16631632|
-|   365|/mnt/wrk/hdftest/...|16631632|
-|   138|/mnt/wrk/hdftest/...|16631632|
-|   101|/mnt/wrk/hdftest/...|16631632|
-|   347|/mnt/wrk/hdftest/...|16631632|
-|   333|/mnt/wrk/hdftest/...|16631632|
-|   249|/mnt/wrk/hdftest/...|16631632|
-|   234|/mnt/wrk/hdftest/...|16631632|
-|     0|/mnt/wrk/hdftest/...|16631632|
-|    88|/mnt/wrk/hdftest/...|16631632|
-|   352|/mnt/wrk/hdftest/...|16631632|
-|   170|/mnt/wrk/hdftest/...|16631632|
-|   115|/mnt/wrk/hdftest/...|16631632|
-|   217|/mnt/wrk/hdftest/...|16631632|
-|   276|/mnt/wrk/hdftest/...|16631632|
-|   308|/mnt/wrk/hdftest/...|16631632|
-|     5|/mnt/wrk/hdftest/...|16631632|
-|   120|/mnt/wrk/hdftest/...|16631632|
-|   247|/mnt/wrk/hdftest/...|16631632|
-|   269|/mnt/wrk/hdftest/...|16631632|
-+------+--------------------+--------+
-only showing top 20 rows
+* Two collections of HDF5 files
 
-:END:
+** HDF5 testing
+
+   #+BEGIN_SRC shell
+   ls -R /home/gheber/work/hdf5-1.10.4/test | grep h5 | wc -l
+   #+END_SRC
+
+   #+RESULTS:
+   :RESULTS:
+   58
+   :END:
+
+   A directory for each year:
+
+   #+BEGIN_SRC shell
+   ls -lR /home/gheber/work/hdf5-1.10.4/test/*.h5
+   #+END_SRC
+
+   #+RESULTS:
+   :RESULTS:
+   -rw-r--r--. 1 gheber hdf  2448 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/aggr.h5
+   -rw-r--r--. 1 gheber hdf  2208 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/bad_compound.h5
+   -rw-r--r--. 1 gheber hdf  3312 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/bad_offset.h5
+   -rw-r--r--. 1 gheber hdf 72368 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/be_data.h5
+   -rw-r--r--. 1 gheber hdf   896 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/be_extlink1.h5
+   -rw-r--r--. 1 gheber hdf  2864 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/be_extlink2.h5
+   -rw-r--r--. 1 gheber hdf  6350 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/btree_idx_1_6.h5
+   -rw-r--r--. 1 gheber hdf  5065 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/btree_idx_1_8.h5
+   -rw-r--r--. 1 gheber hdf  2928 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/corrupt_stab_msg.h5
+   -rw-r--r--. 1 gheber hdf  6240 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/deflate.h5
+   -rw-r--r--. 1 gheber hdf  5120 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/family_v16_00000.h5
+   -rw-r--r--. 1 gheber hdf  5120 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/family_v16_00001.h5
+   -rw-r--r--. 1 gheber hdf  5120 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/family_v16_00002.h5
+   -rw-r--r--. 1 gheber hdf  4048 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/family_v16_00003.h5
+   -rw-r--r--. 1 gheber hdf 18528 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/file_image_core_test.h5
+   -rw-r--r--. 1 gheber hdf  2448 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/filespace_1_6.h5
+   -rw-r--r--. 1 gheber hdf  2544 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/filespace_1_8.h5
+   -rw-r--r--. 1 gheber hdf  2560 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/fill_old.h5
+   -rw-r--r--. 1 gheber hdf  3576 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/filter_error.h5
+   -rw-r--r--. 1 gheber hdf  2448 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/fsm_aggr_nopersist.h5
+   -rw-r--r--. 1 gheber hdf  2565 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/fsm_aggr_persist.h5
+   -rw-r--r--. 1 gheber hdf  1952 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/group_old.h5
+   -rw-r--r--. 1 gheber hdf  6760 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/h5fc_ext1_f.h5
+   -rw-r--r--. 1 gheber hdf  6526 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/h5fc_ext1_i.h5
+   -rw-r--r--. 1 gheber hdf  6526 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/h5fc_ext2_if.h5
+   -rw-r--r--. 1 gheber hdf  5076 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/h5fc_ext2_sf.h5
+   -rw-r--r--. 1 gheber hdf  6679 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/h5fc_ext3_isf.h5
+   -rw-r--r--. 1 gheber hdf  6474 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/h5fc_ext_none.h5
+   -rw-r--r--. 1 gheber hdf 72368 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/le_data.h5
+   -rw-r--r--. 1 gheber hdf   896 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/le_extlink1.h5
+   -rw-r--r--. 1 gheber hdf  2864 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/le_extlink2.h5
+   -rw-r--r--. 1 gheber hdf  3472 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/mergemsg.h5
+   -rw-r--r--. 1 gheber hdf 65536 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/multi_file_v16-r.h5
+   -rw-r--r--. 1 gheber hdf  2048 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/multi_file_v16-s.h5
+   -rw-r--r--. 1 gheber hdf  8088 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/noencoder.h5
+   -rw-r--r--. 1 gheber hdf  1808 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/none.h5
+   -rw-r--r--. 1 gheber hdf  8192 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/paged_nopersist.h5
+   -rw-r--r--. 1 gheber hdf 16384 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/paged_persist.h5
+   -rw-r--r--. 1 gheber hdf  1752 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/specmetaread.h5
+   -rw-r--r--. 1 gheber hdf  6032 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/tarrold.h5
+   -rw-r--r--. 1 gheber hdf  1984 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/tbad_msg_count.h5
+   -rw-r--r--. 1 gheber hdf  4512 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/tbogus.h5
+   -rw-r--r--. 1 gheber hdf  5720 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/test_filters_be.h5
+   -rw-r--r--. 1 gheber hdf  5720 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/test_filters_le.h5
+   -rw-r--r--. 1 gheber hdf  2049 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/th5s.h5
+   -rw-r--r--. 1 gheber hdf  1576 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/tlayouto.h5
+   -rw-r--r--. 1 gheber hdf  1576 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/tmtimen.h5
+   -rw-r--r--. 1 gheber hdf  2052 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/tmtimeo.h5
+   -rw-r--r--. 1 gheber hdf  1028 Sep  3 21:54 /home/gheber/work/hdf5-1.10.4/test/tsizeslheap.h5
+   :END:
+
+
+** HDF-EOS
+
+   Twenty years of daily HDF-EOS5 files:
+
+   #+BEGIN_SRC shell
+   ls -R /mnt/wrk/hdftest/GSSTF_NCEP.3/ | grep he5 | wc -l
+   #+END_SRC
+
+   #+RESULTS:
+   :RESULTS:
+   15700
+   :END:
+
+   A directory for each year:
+
+   #+BEGIN_SRC shell
+   ls -l /mnt/wrk/hdftest/GSSTF_NCEP.3/
+   #+END_SRC
+
+   #+RESULTS:
+   :RESULTS:
+   total 1140
+   drwxr-xr-x. 2 gheber hdf 16384 Jun  1  2017 1987
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1988
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1989
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1990
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1991
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1992
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1993
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1994
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1995
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1996
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1997
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1998
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1999
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 2000
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 2001
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 2002
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 2003
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 2004
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 2005
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 2006
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 2007
+   drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 2008
+   -rw-r--r--. 1 gheber hdf 20176 Jul 25  2017 derby.log
+   drwxr-xr-x. 2 gheber hdf  8192 Jul 25  2017 df.avro
+   drwxr-xr-x. 2 gheber hdf    38 Jun  1  2017 doc
+   -rw-r--r--. 1 gheber hdf  1513 Jul 25  2017 log.out
+   drwxr-xr-x. 5 gheber hdf  4096 Jul 25  2017 metastore_db
+   :END:
+
+
+
+* Basic options
+
+  The Spark data source for HDF5 has two mandatory parameters
+
+  - =path= :: The top level directory where to begin the search for HDF5 files
+  - =dataset= :: The HDF5 path name of the dataset to be read
+
+  The default file extension for HDF5 files is =h5=.
+
+
+* A Spark-friendly file inventory =sparky://files=
+
+  We mimic a database catalog via "pseudo datasets" under the =sparky= scheme:
+
+  #+BEGIN_SRC ipython :results output
+  conf = sc.getConf()
+  conf.set('spark.driver.memory', '16g')
+
+  sqlc = SQLContext(sc)
+
+  opts = {
+      'path' : '/home/gheber/work/hdf5-1.10.4/test',
+      'dataset': 'sparky://files',
+  }
+
+  df = sqlc.read.format('org.hdfgroup.spark.hdf5').options(**opts).load()
+
+  df.show()
+  #+END_SRC
+
+  #+RESULTS:
+  :RESULTS:
+  +------+--------------------+--------+
+  |FileID|            FilePath|FileSize|
+  +------+--------------------+--------+
+  |     0|/home/gheber/work...|   72368|
+  |     5|/home/gheber/work...|    3312|
+  |    10|/home/gheber/work...|    6350|
+  |    42|/home/gheber/work...|    2448|
+  |    24|/home/gheber/work...|   72368|
+  |    37|/home/gheber/work...|    5120|
+  |    25|/home/gheber/work...|    2208|
+  |    14|/home/gheber/work...|    6240|
+  |    20|/home/gheber/work...|   16384|
+  |    46|/home/gheber/work...|    4512|
+  |    29|/home/gheber/work...|   65536|
+  |     1|/home/gheber/work...|    3576|
+  |     6|/home/gheber/work...|    5720|
+  |    28|/home/gheber/work...|    1952|
+  |    38|/home/gheber/work...|    2052|
+  |    21|/home/gheber/work...|    1576|
+  |    33|/home/gheber/work...|    6526|
+  |     9|/home/gheber/work...|    3472|
+  |    13|/home/gheber/work...|    6760|
+  |    41|/home/gheber/work...|    2049|
+  +------+--------------------+--------+
+  only showing top 20 rows
+
+  :END:
+
+  Use the =extension= option to specify different extension(s).
+
+  The default is recursive file discovery. Overwrite with the (boolean)
+  =recursion= option.
+
+  #+BEGIN_SRC ipython
+  opts = {
+      'path': '/mnt/wrk/hdftest/GSSTF_NCEP.3',
+      'dataset': 'sparky://files',
+      'extension': 'he5'
+  }
+
+  df = sqlc.read.format('org.hdfgroup.spark.hdf5').options(**opts).load()
+
+  df.count()
+  #+END_SRC
+
+  #+RESULTS:
+  :RESULTS:
+  # Out[2]:
+  : 7850
+  :END:
+
+  We've got about 21 years of daily files:
+
+  #+BEGIN_SRC emacs-lisp
+  (* 21 365)
+  #+END_SRC
+
+  #+RESULTS:
+  :RESULTS:
+  7665
+  :END:
+
+
+* A Spark-friendly dataset inventory =sparky://datasets=
+
+  #+BEGIN_SRC ipython :results output
+  opts = {
+      'path': '/mnt/wrk/hdftest/GSSTF_NCEP.3/2000',
+      'dataset': 'sparky://datasets',
+      'extension': 'he5'
+  }
+
+  df = sqlc.read.format('org.hdfgroup.spark.hdf5').options(**opts).load()
+
+  df.show()
+  #+END_SRC
+
+  #+RESULTS:
+  :RESULTS:
+  +------+--------------------+-----------+-----------+------------+
+  |FileID|         DatasetPath|ElementType| Dimensions|ElementCount|
+  +------+--------------------+-----------+-----------+------------+
+  |    69|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |    69|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |    69|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |    69|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |    69|/HDFEOS INFORMATI...|   FLString|         []|           0|
+  |   365|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |   365|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |   365|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |   365|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |   365|/HDFEOS INFORMATI...|   FLString|         []|           0|
+  |   138|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |   138|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |   138|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |   138|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |   138|/HDFEOS INFORMATI...|   FLString|         []|           0|
+  |   101|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |   101|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |   101|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |   101|/HDFEOS/GRIDS/NCE...|    Float32|[720, 1440]|     1036800|
+  |   101|/HDFEOS INFORMATI...|   FLString|         []|           0|
+  +------+--------------------+-----------+-----------+------------+
+  only showing top 20 rows
+
+  :END:
+
+
+* A Spark-friendly attributes inventory =sparky://attributes=
+
+
+  #+BEGIN_SRC ipython :results output
+  opts = {
+      'path': '/mnt/wrk/hdftest/GSSTF_NCEP.3/2000',
+      'dataset': 'sparky://attributes',
+      'extension': 'he5'
+  }
+
+  df = sqlc.read.format('org.hdfgroup.spark.hdf5').options(**opts).load()
+
+  df.show()
+  #+END_SRC
+
+  #+RESULTS:
+  :RESULTS:
+  +------+--------------------+--------------------+-----------+----------+--------------------+
+  |FileID|          ObjectPath|       AttributeName|ElementType|Dimensions|               Value|
+  +------+--------------------+--------------------+-----------+----------+--------------------+
+  |    69|/HDFEOS/ADDITIONA...|           BeginDate|   FLString|        []|          2000-07-10|
+  |    69|/HDFEOS/ADDITIONA...|             EndDate|   FLString|        []|          2000-07-11|
+  |    69|/HDFEOS/ADDITIONA...|           ShortName|   FLString|        []|          GSSTF_NCEP|
+  |    69|/HDFEOS/ADDITIONA...|           VersionID|   FLString|        []|                   3|
+  |    69|/HDFEOS/ADDITIONA...|CollectionDescrip...|   FLString|        []|NCEP/DOE Reanalys...|
+  |    69|/HDFEOS/ADDITIONA...|            LongName|   FLString|        []|NCEP/DOE Reanalys...|
+  |    69|/HDFEOS/ADDITIONA...|                 DOI|   FLString|        []|10.5067/MEASURES/...|
+  |    69|/HDFEOS/GRIDS/NCE...|          _FillValue|    Float32|       [1]|              -999.0|
+  |    69|/HDFEOS/GRIDS/NCE...|           long_name|   FLString|        []|  sea level pressure|
+  |    69|/HDFEOS/GRIDS/NCE...|               units|   FLString|        []|                 hPa|
+  |    69|/HDFEOS/GRIDS/NCE...|          _FillValue|    Float32|       [1]|              -999.0|
+  |    69|/HDFEOS/GRIDS/NCE...|           long_name|   FLString|        []|sea surface satur...|
+  |    69|/HDFEOS/GRIDS/NCE...|               units|   FLString|        []|                g/kg|
+  |    69|/HDFEOS/GRIDS/NCE...|          _FillValue|    Float32|       [1]|              -999.0|
+  |    69|/HDFEOS/GRIDS/NCE...|           long_name|   FLString|        []|sea surface skin ...|
+  |    69|/HDFEOS/GRIDS/NCE...|               units|   FLString|        []|                   C|
+  |    69|/HDFEOS/GRIDS/NCE...|          _FillValue|    Float32|       [1]|              -999.0|
+  |    69|/HDFEOS/GRIDS/NCE...|           long_name|   FLString|        []|  2m air temperature|
+  |    69|/HDFEOS/GRIDS/NCE...|               units|   FLString|        []|                   C|
+  |    69| /HDFEOS INFORMATION|       HDFEOSVersion|   FLString|        []|       HDFEOS_5.1.11|
+  +------+--------------------+--------------------+-----------+----------+--------------------+
+  only showing top 20 rows
+
+  :END:
+
+
+* +A Spark-friendly groups inventory+ =sparky://groups=
+
+  Currently, there is no summary for groups. /Who wants it and why?/
+
+
+* Working with data
+
+  The Spark connector will look for  =dataset= in all HDF5 files under =path=.
+  Files that do not contain =dataset= will be ignored.
+
+  Multi-dimensional arrays are flattened (linearized) in C-order.
+
+  Currently, only scalar (ints, floats, strings) datatypes are supported.
+
+  #+BEGIN_SRC ipython :results output
+  opts = {
+      'path': '/mnt/wrk/hdftest/GSSTF_NCEP.3/2000',
+      'dataset': '/HDFEOS/GRIDS/NCEP/Data Fields/Tair_2m',
+      'extension': 'he5'
+  }
+
+  df = sqlc.read.format('org.hdfgroup.spark.hdf5').options(**opts).load()
+
+  df.show()
+  #+END_SRC
+
+  #+RESULTS:
+  :RESULTS:
+  +------+-----+------+
+  |FileID|Index| Value|
+  +------+-----+------+
+  |    69|    0|-999.0|
+  |    69|    1|-999.0|
+  |    69|    2|-999.0|
+  |    69|    3|-999.0|
+  |    69|    4|-999.0|
+  |    69|    5|-999.0|
+  |    69|    6|-999.0|
+  |    69|    7|-999.0|
+  |    69|    8|-999.0|
+  |    69|    9|-999.0|
+  |    69|   10|-999.0|
+  |    69|   11|-999.0|
+  |    69|   12|-999.0|
+  |    69|   13|-999.0|
+  |    69|   14|-999.0|
+  |    69|   15|-999.0|
+  |    69|   16|-999.0|
+  |    69|   17|-999.0|
+  |    69|   18|-999.0|
+  |    69|   19|-999.0|
+  +------+-----+------+
+  only showing top 20 rows
+
+  :END:
+
+  Control parallelism and read batch size through the =window size= option.
+  This is the maximal number of dataset elements read in a single read request
+  and specified in number of elements **not** in bytes!
+
+  Select a block of elements through the =start= and =block= options.
+
+  #+BEGIN_SRC ipython :results output
+  opts = {
+      'path': '/mnt/wrk/hdftest/GSSTF_NCEP.3/2000',
+      'dataset': '/HDFEOS/GRIDS/NCEP/Data Fields/Tair_2m',
+      'extension': 'he5',
+      'window size': '100000',
+      'start': '240,440',
+      'block': '200,500'
+  }
+
+  df = sqlc.read.format('org.hdfgroup.spark.hdf5').options(**opts).load()
+
+  df.describe().show()
+  #+END_SRC
+
+  #+RESULTS:
+  :RESULTS:
+  +-------+------------------+------------------+-------------------+
+  |summary|            FileID|             Index|              Value|
+  +-------+------------------+------------------+-------------------+
+  |  count|          36600000|          36600000|           36600000|
+  |   mean|             182.5|          704129.5|-507.10229361438854|
+  | stddev|105.65470633939793|207840.74579714955|  511.4640040998056|
+  |    min|                 0|            346040|             -999.0|
+  |    max|               365|           1062219|          32.207397|
+  +-------+------------------+------------------+-------------------+
+
+  :END:
+
+  Let's get rid of the fill values!
+
+  #+BEGIN_SRC ipython
+  nofill = df.drop('FileID').where(df.Value != -999.0)
+  nofill.count()
+  #+END_SRC
+
+  #+RESULTS:
+  :RESULTS:
+  # Out[7]:
+  : 17586666
+  :END:
+
+  #+BEGIN_SRC ipython :results output
+  nofill.drop('Index').describe().show()
+  #+END_SRC
+
+  #+RESULTS:
+  :RESULTS:
+  +-------+------------------+
+  |summary|             Value|
+  +-------+------------------+
+  |  count|          17586666|
+  |   mean|24.699207894968772|
+  | stddev| 2.691732150215473|
+  |    min|          9.565399|
+  |    max|         32.207397|
+  +-------+------------------+
+
+  :END:
+
+* TODO *Go forth and do great things with the Spark connector for HDF5!*
