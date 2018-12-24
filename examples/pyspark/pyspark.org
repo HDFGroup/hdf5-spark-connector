@@ -36,8 +36,6 @@
    58
    :END:
 
-   A directory for each year:
-
    #+BEGIN_SRC shell
    ls -lR /home/gheber/work/hdf5-1.10.4/test/*.h5
    #+END_SRC
@@ -101,12 +99,12 @@
    Twenty years of daily HDF-EOS5 files:
 
    #+BEGIN_SRC shell
-   ls -R /mnt/wrk/hdftest/GSSTF_NCEP.3/ | grep he5 | wc -l
+   ls -R /mnt/wrk/hdftest/GSSTF_NCEP.3/ | grep he5 | grep -v xml | wc -l
    #+END_SRC
 
    #+RESULTS:
    :RESULTS:
-   15700
+   7850
    :END:
 
    A directory for each year:
@@ -117,7 +115,7 @@
 
    #+RESULTS:
    :RESULTS:
-   total 1140
+   total 1100
    drwxr-xr-x. 2 gheber hdf 16384 Jun  1  2017 1987
    drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1988
    drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 1989
@@ -140,11 +138,7 @@
    drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 2006
    drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 2007
    drwxr-xr-x. 2 gheber hdf 32768 Jun  1  2017 2008
-   -rw-r--r--. 1 gheber hdf 20176 Jul 25  2017 derby.log
-   drwxr-xr-x. 2 gheber hdf  8192 Jul 25  2017 df.avro
    drwxr-xr-x. 2 gheber hdf    38 Jun  1  2017 doc
-   -rw-r--r--. 1 gheber hdf  1513 Jul 25  2017 log.out
-   drwxr-xr-x. 5 gheber hdf  4096 Jul 25  2017 metastore_db
    :END:
 
 
@@ -228,7 +222,7 @@
 
   #+RESULTS:
   :RESULTS:
-  # Out[2]:
+  # Out[10]:
   : 7850
   :END:
 
@@ -435,7 +429,7 @@
 
   #+RESULTS:
   :RESULTS:
-  # Out[7]:
+  # Out[15]:
   : 17586666
   :END:
 
