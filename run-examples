@@ -1,0 +1,26 @@
+#!/usr/bin/bash
+
+HDF5_JAVA_JAR=$HOME/.local/lib/jarhdf5-1.10.4-snap0.jar
+JHDF5_JARS=lib/jhdf5.jar,lib/sis-base.jar
+SPARKY_JAR=target/scala-2.11/5parky_2.11-0.0.1-ALPHA.jar
+
+JARS=$SPARKY_JAR,$JHDF5_JARS,$HDF5_JAVA_JAR
+
+OPTS="--driver-memory 16G --jars $JARS"
+
+spark-shell $OPTS -i examples/vrtl.scala
+
+rm -rf file.csv
+
+spark-shell $OPTS -i examples/blog.scala \
+  --packages com.databricks:spark-csv_2.11:1.5.0
+
+rm -rf df.avro
+
+spark-shell $OPTS -i examples/avroWrite.scala \
+  --packages com.databricks:spark-avro_2.11:4.0.0
+
+time spark-shell $OPTS -i examples/avroCount.scala \
+  --packages com.databricks:spark-avro_2.11:4.0.0
+
+time spark-shell $OPTS -i examples/5parkyCount.scala

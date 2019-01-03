@@ -6,12 +6,16 @@
 //  \note added multi-dimensional case readDataset() function.
 //  \note cleaned up log message to match parameters.
 package org.hdfgroup.spark.hdf5.reader
+
 import ch.systemsx.cisd.hdf5.IHDF5Reader
 import org.apache.spark.SparkException
 import org.hdfgroup.spark.hdf5.reader.HDF5Schema.ArrayVar
 import org.slf4j.LoggerFactory
 
-class DatasetReader[T](val reader: IHDF5Reader, val node: ArrayVar[T]) extends Serializable {
+class DatasetReader[T](
+    val reader: IHDF5Reader,
+    val node: ArrayVar[T])
+  extends Serializable {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -38,9 +42,13 @@ class DatasetReader[T](val reader: IHDF5Reader, val node: ArrayVar[T]) extends S
     node.contains.readMatrixBlockWithOffset(reader, blockSize, offset)
   }
 
-  def readDataset(blockSize: Array[Int], offset: Array[Long], index: Array[Long]):
-      Array[T] = {
+  def readDataset(
+      blockSize: Array[Int],
+      offset: Array[Long],
+      index: Array[Long]): Array[T] = {
       log.trace("readDataset(blockSize: Array[Int], offset: Array[Long], index: Array[Long]): Array[T]")
-      node.contains.readSlicedMDArrayBlockWithOffset(reader, blockSize, offset, index)
-  }      
+
+      node.contains.readSlicedMDArrayBlockWithOffset(
+          reader, blockSize, offset, index)
+      } 
 }

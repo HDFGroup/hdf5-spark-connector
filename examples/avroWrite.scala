@@ -3,13 +3,18 @@
 import com.databricks.spark.avro._
 import org.hdfgroup.spark.hdf5._
 
+sc.setLogLevel("ERROR")
+
 val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
 val dirName = "/mnt/wrk/hdftest/GSSTF_NCEP.3/2000"
 val varName = "/HDFEOS/GRIDS/NCEP/Data Fields/Tair_2m"
 
-val df = sqlContext.read.option("extension", "he5").
-  option("window size", "200000").hdf5(dirName, varName)
+val df = { sqlContext.read
+  .option("extension", "he5")
+  .option("window size", "200000")
+  .hdf5(dirName, varName)
+}
 
 df.write.avro("df.avro")
 

@@ -1,5 +1,6 @@
 package org.hdfgroup.spark.hdf5
 
+import org.apache.spark.SparkException
 import org.apache.spark.sql.types._
 import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.slf4j.LoggerFactory
@@ -66,10 +67,12 @@ object SchemaConverter {
       case UInt16(_, _) => IntegerType
       case Int32(_, _) => IntegerType
       case UInt32(_, _) => LongType
+      //case UInt64(_, _) => ?
       case Int64(_, _) => LongType
       case Float32(_, _) => FloatType
       case Float64(_, _) => DoubleType
       case FLString(_, _) => StringType
+      case _ => throw new SparkException("Unsupported type found!")
     }
   }
 }

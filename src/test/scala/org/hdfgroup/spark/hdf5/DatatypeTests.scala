@@ -7,8 +7,6 @@ import org.apache.spark.sql.types._
 class DatatypeTests extends FunTestSuite {
 
   val h5file = getClass.getResource("test1.h5").toString
-  val h5dir = FilenameUtils.getFullPathNoEndSeparator(
-    getClass.getResource("test1.h5").getPath)
 
   val int8test = "/datatypes/int8"
   val int16test = "/datatypes/int16"
@@ -23,7 +21,7 @@ class DatatypeTests extends FunTestSuite {
   // Signed integer tests
 
   test("Reading int8") {
-    val df = sqlContext.read.hdf5(h5file, int8test)
+    val df = spark.read.hdf5(h5file, int8test)
 
     assert(df.schema === makeSchema(ByteType))
 
@@ -35,7 +33,7 @@ class DatatypeTests extends FunTestSuite {
   }
 
   test("Reading int16") {
-    val df = sqlContext.read.hdf5(h5file, int16test)
+    val df = spark.read.hdf5(h5file, int16test)
 
     assert(df.schema === makeSchema(ShortType))
 
@@ -47,7 +45,7 @@ class DatatypeTests extends FunTestSuite {
   }
 
   test("Reading int32") {
-    val df = sqlContext.read.hdf5(h5file, int32test)
+    val df = spark.read.hdf5(h5file, int32test)
 
     assert(df.schema === makeSchema(IntegerType))
 
@@ -59,7 +57,7 @@ class DatatypeTests extends FunTestSuite {
   }
 
   test("Reading int64") {
-    val df = sqlContext.read.hdf5(h5file, int64test)
+    val df = spark.read.hdf5(h5file, int64test)
 
     assert(df.schema === makeSchema(LongType))
 
@@ -73,7 +71,7 @@ class DatatypeTests extends FunTestSuite {
   // Unsigned integer tests
 
   test("Reading uint8") {
-    val df = sqlContext.read.hdf5(h5file, uint8test)
+    val df = spark.read.hdf5(h5file, uint8test)
 
     assert(df.schema === makeSchema(ShortType))
 
@@ -83,7 +81,7 @@ class DatatypeTests extends FunTestSuite {
   }
 
   test("Reading uint16") {
-    val df = sqlContext.read.hdf5(h5file, uint16test)
+    val df = spark.read.hdf5(h5file, uint16test)
 
     assert(df.schema === makeSchema(IntegerType))
 
@@ -93,7 +91,7 @@ class DatatypeTests extends FunTestSuite {
   }
 
   test("Reading uint32") {
-    val df = sqlContext.read.hdf5(h5file, uint32test)
+    val df = spark.read.hdf5(h5file, uint32test)
 
     assert(df.schema === makeSchema(LongType))
 
@@ -105,7 +103,7 @@ class DatatypeTests extends FunTestSuite {
   // Float tests
 
   test("Reading float32") {
-    val df = sqlContext.read.hdf5(h5file, float32test)
+    val df = spark.read.hdf5(h5file, float32test)
 
     assert(df.schema === makeSchema(FloatType))
 
@@ -118,7 +116,7 @@ class DatatypeTests extends FunTestSuite {
   }
 
   test("Reading float64") {
-    val df = sqlContext.read.hdf5(h5file, float64test)
+    val df = spark.read.hdf5(h5file, float64test)
 
     assert(df.schema === makeSchema(DoubleType))
 
@@ -133,7 +131,7 @@ class DatatypeTests extends FunTestSuite {
   test("Reading fixed length strings") {
     val dataset = "/datatypes/string"
     val alpha = "abcdefghijklmnopqrstuvwxyz"
-    val df = sqlContext.read.hdf5(h5file, dataset)
+    val df = spark.read.hdf5(h5file, dataset)
 
     assert(df.schema === makeSchema(StringType))
 

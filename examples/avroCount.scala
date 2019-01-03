@@ -2,6 +2,8 @@
 
 import com.databricks.spark.avro._
 
+sc.setLogLevel("ERROR")
+
 val df = spark.read.avro("df.avro")
 df.count()
 

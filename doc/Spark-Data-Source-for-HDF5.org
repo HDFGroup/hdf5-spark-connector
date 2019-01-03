@@ -1,0 +1,177 @@
+#+TITLE: A Spark Data Source for HDF5
+#+AUTHOR: Gerd Heber, The HDF Group
+#+EMAIL: gheber@hdfgroup.org
+#+DATE: 2018-11-19
+
+This is not an introduction to HDF5 or Spark. We assume that the reader
+has used Spark with different data sources and knows "the Spark way"
+of how to configure such data sources. We also assume that the reader
+has a general idea of what an HDF5 file is and its logical structure.
+
+
+* Motivation
+
+  Reading data from a CSV into a Spark DataFrame is as simple as this:
+
+  #+BEGIN_SRC scala
+  import org.apache.spark.sql.SQLContext
+  val sqlContext = new SQLContext(sc)
+  val df = spark.read.csv("file.csv")
+  #+END_SRC
+
+  The purpose of the Spark data source for HDF5 is to make reading data
+  stored in HDF5 equally simple:
+
+  #+BEGIN_SRC scala
+  import org.apache.spark.sql.SQLContext
+  val sqlContext = new SQLContext(sc)
+  val df = spark.read.hdf5("file.h5", "/path/to/dataset")
+  #+END_SRC
+
+
+* Prerequisites
+
+  The data source is distributed a package that includes several Java archives
+  and shared libraries. The main components are:
+
+  1. A copy of the native HDF5 library (1.10.x)
+  2. A copy of Bernd Rinn's [[https://wiki-bsse.ethz.ch/pages/viewpage.action?pageId=26609113][JHDF5 (HDF5 for Java)]] library
+  3. A copy of the data source proper
+
+ At the time of this writing the package included the
+ following files:
+
+  #+BEGIN_EXAMPLE
+  ./cisd-args4j-9.11.2.jar
+  ./native/jhdf5/arm-Linux/libjhdf5.so
+  ./native/jhdf5/amd64-Linux/libjhdf5.so
+  ./native/jhdf5/x86_64-Mac OS X/libjhdf5.jnilib
+  ./native/jhdf5/amd64-Windows/jhdf5.dll
+  ./native/nativedata/amd64-Linux/libnativedata.so
+  ./native/nativedata/amd64-Windows/nativedata.dll
+  ./native/nativedata/arm-Linux/libnativedata.so
+  ./native/nativedata/i386-Linux/libnativedata.so
+  ./native/nativedata/x86-Windows/nativedata.dll
+  ./native/nativedata/x86_64-Mac OS X/libnativedata.jnilib
+  ./native/unix/amd64-Linux/libunix.so
+  ./native/unix/arm-Linux/libunix.so
+  ./native/unix/i386-Linux/libunix.so
+  ./native/unix/x86_64-Mac OS X/libunix.jnilib
+  ./sis-base-18.08.0.jar
+  ./sis-jhdf5-18.09.0-pre1.jar
+  ./5parky_2.11-0.0.2-BETA.jar
+  #+END_EXAMPLE
+
+* Mapping HDF5 Datasets to Spark DataFrames
+
+  HDF5 datasets are (logically) dense multidimensional arrays.
+  (Logically) Spark dataframes are bags of records of a given
+  signature (field names and types). Unfortunately, there is no
+  /canonical/ mapping between the two. Most people would probably
+  agree that the mapping should preserve cardinality, i.e., there
+  should be exactly one record for each array element, but that's
+  about it for agreement.
+
+  Additional context:
+
+  - Multiple files
+  - Compound types
+  - Attributes
+
+
+
+* Data Source Options
+
+  The only mandatory parameter of the CSV data source is a location of files.
+  Beyond that it has about two dozen additional customization options.
+  The HDF5 data source has only two mandatory parameters:
+
+  1. =path=: A location of HDF5 files
+  2. =dataset=: The HDF5 path name of the dataset to read (in each file)
+
+  Because of the self-describing nature of HDF5 files there are many fewer
+  options.
+
+** Reserved Dataset Names
+
+   All HDF5 path names can be thought of as being under the auspices of the
+   =h5= or =hdf5= URI scheme. There are currently three path names under the
+   data source-specific =sparky= scheme whose purpose is to mimic the
+   functionality of a database catalog.
+
+*** =sparky://files=
+
+    This path name can be used to generate a data frame with three columns:
+    =FileID=, =FilePath=, and =FileSize=. The =FileID= is generated dynamically and
+    depends on the =path= and other options. It is guaranteed to be constant for
+    a given files set, set of options and version of the software, i.e.,
+    invoking it twice (at different times) will yield identical data frames.
+
+    **WARNING:** A change in the underlying set of files is likely to produce
+    different IDs for a given file.
+
+    #+BEGIN_EXAMPLE
+    df: org.apache.spark.sql.DataFrame = [FileID: int, FilePath: string ... 1 more field]
+    +------+----------------------------------------------------------------------+--------+
+    |FileID|FilePath                                                              |FileSize|
+    +------+----------------------------------------------------------------------+--------+
+    |0     |/mnt/wrk/gheber/Bitbucket/5parky/pre-release/beta2/data/test2.h5      |1440    |
+    |5     |/mnt/wrk/gheber/Bitbucket/5parky/pre-release/beta2/data/sub/test2.hdf5|5536    |
+    |1     |/mnt/wrk/gheber/Bitbucket/5parky/pre-release/beta2/data/test3.h5      |1440    |
+    |2     |/mnt/wrk/gheber/Bitbucket/5parky/pre-release/beta2/data/test1.h5      |23722   |
+    |3     |/mnt/wrk/gheber/Bitbucket/5parky/pre-release/beta2/data/sub/test1.hdf5|33962   |
+    |4     |/mnt/wrk/gheber/Bitbucket/5parky/pre-release/beta2/data/sub/test3.hdf5|5536    |
+    +------+----------------------------------------------------------------------+--------+
+    #+END_EXAMPLE
+
+*** =sparky://datasets=
+
+    #+BEGIN_EXAMPLE
+    df: org.apache.spark.sql.DataFrame = [FileID: int, DatasetPath: string ... 3 more fields]
+    +------+--------------------+-----------+----------+------------+
+    |FileID|DatasetPath         |ElementType|Dimensions|ElementCount|
+    +------+--------------------+-----------+----------+------------+
+    |0     |/datatypes/float32  |Float32    |[10]      |10          |
+    |0     |/datatypes/float64  |Float64    |[10]      |10          |
+    |0     |/datatypes/int16    |Int16      |[10]      |10          |
+    |0     |/datatypes/int32    |Int32      |[10]      |10          |
+    |0     |/datatypes/int64    |Int64      |[10]      |10          |
+    |0     |/datatypes/int8     |Int8       |[10]      |10          |
+    |0     |/datatypes/string   |FLString   |[10]      |10          |
+    |0     |/datatypes/uint16   |UInt16     |[10]      |10          |
+    |0     |/datatypes/uint32   |UInt32     |[10]      |10          |
+    |0     |/datatypes/uint8    |UInt8      |[10]      |10          |
+    |0     |/dimensionality/1dim|Int32      |[10]      |10          |
+    |0     |/dimensionality/2dim|Int32      |[3, 10]   |30          |
+    |0     |/dimensionality/3dim|Int32      |[2, 2, 5] |20          |
+    |0     |/multi              |Int32      |[10]      |10          |
+    |1     |/multi              |Int32      |[10]      |10          |
+    |2     |/multi              |Int32      |[10]      |10          |
+    +------+--------------------+-----------+----------+------------+
+    #+END_EXAMPLE
+
+*** =sparky://attributes=
+
+    #+BEGIN_EXAMPLE
+    df: org.apache.spark.sql.DataFrame = [FileID: int, ObjectPath: string ... 4 more fields]
+    +------+--------------------+-------------+-----------+----------+-----------+
+    |FileID|ObjectPath          |AttributeName|ElementType|Dimensions|Value      |
+    +------+--------------------+-------------+-----------+----------+-----------+
+    |0     |/dimensionality/1dim|Length       |FLString   |[]        |Meters     |
+    |0     |/dimensionality/2dim|Area         |FLString   |[]        |Meters     |
+    |0     |/dimensionality/3dim|Volume       |FLString   |[]        |Meters     |
+    |0     |/multi              |Units        |FLString   |[]        |Meters     |
+    |1     |/multi              |Units        |FLString   |[]        |Centimeters|
+    |2     |/multi              |Units        |FLString   |[]        |Millimeters|
+    +------+--------------------+-------------+-----------+----------+-----------+
+    #+END_EXAMPLE
+
+** =extension=
+
+** =window size=
+
+** =recursion=
+
+** =start=
+
+** =block=

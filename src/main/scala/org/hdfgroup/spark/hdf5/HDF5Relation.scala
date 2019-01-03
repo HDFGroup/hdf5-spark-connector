@@ -21,24 +21,31 @@ import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.hdfgroup.spark.hdf5.reader.{HDF5Reader, HDF5Schema}
 import org.slf4j.LoggerFactory
 
-class HDF5Relation(val paths: Array[String], val dataset: String, 
-                   val fileExtension: Array[String],
-                   val chunkSize: Int, 
-                   val start: Array[Long], 
-                   val block: Array[Int],
-                   val index: Array[Long], 
-                   val recursion: Boolean)
+class HDF5Relation(
+    val paths: Array[String],
+    val dataset: String, 
+    val fileExtension: Array[String],
+    val chunkSize: Int, 
+    val start: Array[Long], 
+    val block: Array[Int],
+    val index: Array[Long], 
+    val recursion: Boolean)
     (@transient val sqlContext: SQLContext)
-    extends BaseRelation with TableScan with PrunedScan {
-    // with InsertableRelation
+    extends BaseRelation
+    with TableScan
+    with PrunedScan {
 
   private val log = LoggerFactory.getLogger(getClass)
+
+  //============================================================================
+  // Determine the HDF5 files "in-scope"
+  //============================================================================
 
   val hadoopConfiguration = sqlContext.sparkContext.hadoopConfiguration
   val fileSystem = FileSystem.get(hadoopConfiguration)
 
-  // Gets an array of the files in the directory (and recursively in the
-  // sub-directories if specified)
+  // Given the paths, file extensions, and recursion behavior construct
+  // an array of HDF5 file names.
   lazy val files: Array[URI] = {
     log.trace("files: Array[URI]")
 
@@ -58,10 +65,11 @@ class HDF5Relation(val paths: Array[String], val dataset: String,
     }
     leaves.filter(status => status.isFile)
       .map(_.getPath)
-      .filter(path => fileExtension.contains(FilenameUtils.getExtension(path.toString)))
+      .filter(path =>
+          fileExtension.contains(FilenameUtils.getExtension(path.toString)))
       .map(org.apache.hadoop.fs.Path.getPathWithoutSchemeAndAuthority(_).toUri)
       .toArray
-  }
+  } // files
 
   // Maps the files with arbitrary ID's starting at zero
   private lazy val fileIDs = {
@@ -73,16 +81,28 @@ class HDF5Relation(val paths: Array[String], val dataset: String,
 
   def getFileName(id: Integer): Option[String] = fileIDs.get(id)
 
-  // Checks the "dataset" variable and either returns a virtual table or
-  // the data, index, and fileID of the files
+  //============================================================================
+  // Collect array variables
+  //============================================================================
+
+  // Apart from "regular" dataset path names, there are currently three
+  // RESERVED dataset names:
+  //   - sparky://files
+  //   - sparky://datasets
+  //   - sparky://attributes
+  // The associated virtual tables are populated with the appropiate
+  // metadata.
+
   private lazy val datasets: Array[ArrayVar[_]] = {
     log.trace("datasets: Array[ArrayVar[_]]")
 
     dataset match {
+      // Filter out virtual tables
+
       case "sparky://files" => fileIDs.map {
         case (id, name) =>
           new ArrayVar(name, id, dataset, HDF5Schema.FLString(id, dataset),
-            Array(1), 1, name, new File(name).length, name, "")
+              Array(1), 1, name, new File(name).length, name, "")
       }.toArray
 
       case "sparky://datasets" => fileIDs.map {
@@ -109,6 +129,11 @@ class HDF5Relation(val paths: Array[String], val dataset: String,
         }
       }.toArray.flatten
 
+      // For "real" datasets we delegate the ArrayVar construction to a
+      // ScanExecutor. 
+
+      // TODO: Explore why we couldn't do the same for the virtual tables!
+
       case _ => fileIDs.flatMap {
         case (id, name) =>
           new ScanExecutor(name, id).openReader(_.getDataset1(dataset))
@@ -116,6 +141,12 @@ class HDF5Relation(val paths: Array[String], val dataset: String,
     }
   }
 
+  //============================================================================
+  // Infer the schema
+  //============================================================================
+
+  // We assume that ALL array variables in datasets follow the same schema.
+  // Infer the schema by looking at the first element.
   private lazy val hdf5Schema: ArrayVar[_] = {
     log.trace("hdf5Schema: ArrayVar[_]")
 
@@ -126,6 +157,10 @@ class HDF5Relation(val paths: Array[String], val dataset: String,
   }
 
   override def schema: StructType = SchemaConverter.convertSchema(hdf5Schema)
+
+  //============================================================================
+  // Build the scan
+  //============================================================================
 
   // TableScan calls PrunedScan with an empty array signalling all columns
   // are to be returned
@@ -140,96 +175,107 @@ class HDF5Relation(val paths: Array[String], val dataset: String,
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
     log.trace("buildScan(): RDD[Row]")
 
+    // TODO: This needs to be refactored.
+
     val hasStart = start(0) != -1
     val hasBlock = block(0) != -1
     val scans = datasets.map { UnboundedScan(_, chunkSize, requiredColumns) }
     val splitScans = scans.flatMap {
       case UnboundedScan(ds, size, cols)
-      if (ds.size > size || hasStart || hasBlock) =>
-        ds.dimension.length match {
-          case 1 => {
-            val validBlock = hasBlock && block.length == 1
-            val startPoint =
-              if (hasStart && start.length == 1) start(0)
-              else 0L
+        if (ds.size > size || hasStart || hasBlock) =>
+          ds.dimension.length match {
+            case 1 => {
+              val validBlock = hasBlock && block.length == 1
+              val startPoint = if (hasStart && start.length == 1)
+                start(0)
+              else
+                0L
 
-            if (validBlock) {
-              (0L until Math.ceil(block(0).toFloat / size).toLong).map(x => {
-                if ((x+1)*size < block(0))
-                    BoundedScan(ds, size, x * size + startPoint, cols)
-                else
-                    BoundedScan(ds, block(0) % (x.toInt*size),
-                                x * size + startPoint, cols)
-              })
-            } else {
-              (0L until Math.ceil(ds.size.toFloat / size).toLong).map(x =>
-                BoundedScan(ds, size, x * size + startPoint, cols))
+              if (validBlock) {
+                (0L until Math.ceil(block(0).toFloat / size).toLong)
+                  .map(x => {
+                      if ((x+1)*size < block(0))
+                        BoundedScan(ds, size, x * size + startPoint, cols)
+                      else
+                        BoundedScan(
+                          ds,
+                          block(0) % (x.toInt*size),
+                          x * size + startPoint, cols)
+                        })
+              }
+              else {
+                (0L until Math.ceil(ds.size.toFloat / size).toLong)
+                  .map(x =>
+                      BoundedScan(ds, size, x * size + startPoint, cols))
+              }
+            }
+            case 2 => {
+              val validBlock = hasBlock && block.length == 2
+              val startPoint = if (hasStart && start.length == 2)
+                start
+              else
+                Array(0L, 0L)
+              val d = if (validBlock)
+                block
+              else
+                ds.dimension.map(_.toInt)
+              val blockSizeX = math.sqrt(size * d(0) / d(1))
+              val blockSizeY = math.sqrt(size * d(1) / d(0))
+              val blockSize = Array[Int](blockSizeX.toInt, blockSizeY.toInt)
+              // Creates block dimensions roughly proportional to the
+              // matrix's dimensions and roughly equivalent to the window size.
+              val matrixX = (Math.ceil(d(0) / blockSizeX)).toInt
+              val matrixY = (Math.ceil(d(1) / blockSizeY)).toInt
+
+              if (validBlock && block(0)*block(1) <= size) {
+                Seq(BoundedMDScan(ds, 0, block, startPoint, cols))
+              }
+              else if (validBlock) {
+                (0 until (matrixX * matrixY))
+                  .map(x => {
+                      BoundedMDScan(
+                        ds,
+                        0,
+                        Array[Int](
+                          if ((x % matrixX + 1) * blockSize(0) > block(0))
+                          (block(0) % (x % matrixX * blockSize(0)))
+                          else
+                          blockSize(0),
+                          if ((x / matrixY + 1) * blockSize(1) > block(1))
+                          (block(1) % (x / matrixY * blockSize(1)))
+                          else
+                          blockSize(1)),
+                        Array[Long](
+                          (x % matrixX * blockSize(0)).toLong + startPoint(0), 
+                          (x / matrixX * blockSize(1)).toLong + startPoint(1)), 
+                        cols)
+                      }) // map
+              }
+              else {
+                // Creates bounded scans on the blocks with their corresponding
+                // indices to cover the entire matrix
+                (0L until (matrixX * matrixY).toLong)
+                  .map(x =>
+                      BoundedMDScan(ds,  0, blockSize,
+                        Array[Long](
+                          (x % matrixX * blockSize(0)).toLong + startPoint(0),
+                          (x / matrixX * blockSize(1)).toLong + startPoint(1)), 
+                        cols))
+              } // else
+            }
+            case _ => {
+              if (index.length == ds.dimension.length)
+                (0L until 1).map(x =>
+                    SlicedMDScan(ds, 0, block, start, index, cols))
+              else
+                throw new SparkException("Unsupported dataset rank!")
             }
           }
-          case 2 => {
-            val validBlock = hasBlock && block.length == 2
-            val startPoint =
-              if (hasStart && start.length == 2)
-                  start
-              else
-                  Array(0L, 0L)
-            val d =
-              if (validBlock)
-                  block
-              else
-                  ds.dimension.map(_.toInt)
-            val blockSizeX = math.sqrt(size * d(0) / d(1))
-            val blockSizeY = math.sqrt(size * d(1) / d(0))
-            val blockSize = Array[Int](blockSizeX.toInt, blockSizeY.toInt)
-            // Creates block dimensions roughly proportional to the
-            // matrix's dimensions and roughly equivalent to the window size.
-            val matrixX = (Math.ceil(d(0) / blockSizeX)).toInt
-            val matrixY = (Math.ceil(d(1) / blockSizeY)).toInt
-
-            if (validBlock && block(0)*block(1) <= size) {
-              Seq(BoundedMDScan(ds, 0, block, startPoint, cols))
-            } else if (validBlock) {
-              (0 until (matrixX * matrixY)).map(x => {
-              BoundedMDScan(ds, 0, Array[Int](
-                  if ((x % matrixX + 1) * blockSize(0) > block(0))
-                      (block(0) % (x % matrixX * blockSize(0)))
-                  else
-                      blockSize(0) ,
-                  if ((x / matrixY + 1) * blockSize(1) > block(1))
-                      (block(1) % (x / matrixY * blockSize(1)))
-                  else
-                      blockSize(1)
-                ), Array[Long]((x % matrixX * blockSize(0)).toLong
-                  + startPoint(0), 
-                               (x / matrixX * blockSize(1)).toLong 
-                               + startPoint(1)), 
-                   cols)
-                  }
-                ) // map
-            } else {
-              // Creates bounded scans on the blocks with their corresponding
-              // indices to cover the entire matrix
-              (0L until (matrixX * matrixY).toLong).map(x =>
-              BoundedMDScan(ds,  0, blockSize,
-                Array[Long]((x % matrixX * blockSize(0)).toLong 
-                            + startPoint(0),
-                            (x / matrixX * blockSize(1)).toLong 
-                            + startPoint(1)), 
-                            cols))
-            } // else
-          }
-          case _ => {
-              if (index.length == ds.dimension.length)
-                  (0L until 1).map(x =>SlicedMDScan(ds, 0, block, start,
-                                                    index, cols))
-              else
-                  throw new SparkException("Unsupported dataset rank!")
-           }
-        }
       case x: UnboundedScan => Seq(x)
     }
     sqlContext.sparkContext.parallelize(splitScans).flatMap { item =>
-      new ScanExecutor(item.dataset.fileName, item.dataset.fileID).execQuery(item)
+      new ScanExecutor(item.dataset.fileName, item.dataset.fileID)
+        .execQuery(item)
     }
   }
 }
