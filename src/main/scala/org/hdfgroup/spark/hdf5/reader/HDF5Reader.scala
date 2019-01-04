@@ -38,7 +38,13 @@ with Serializable {
   def getDataset1(dataset: String): Option[HDF5Node] = {
     log.trace("{}", Array[AnyRef](dataset))
 
-    if (reader.exists(dataset)) {
+    if (dataset == "sparky://files") {
+      Option(
+        ArrayVar(input.toString, id, dataset, HDF5Schema.FLString(id, dataset),
+              Array(1), 1, input.toString, input.length, input.toString, ""))
+
+    }
+    else if (reader.exists(dataset)) {
       val node = reader.getDataSetInformation(dataset)
       val hdfType = infoToType(dataset, node.getTypeInformation)
       Option(

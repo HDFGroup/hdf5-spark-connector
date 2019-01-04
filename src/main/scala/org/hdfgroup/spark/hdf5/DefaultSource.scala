@@ -14,10 +14,23 @@ class DefaultSource extends RelationProvider {
                  parameters: Map[String, String]): BaseRelation = {
       log.trace("{} {}", Array[AnyRef](sqlContext, parameters))
 
-      // A comma-separated list of file and directory paths
+      // A text file containing a list of file names (one per line)
+      val flist = parameters.get("files") match {
+        case Some(x) => x.trim
+        case None => ""
+      }
+
+      // A comma-separated list of file and directory paths (or empty)
       val paths = parameters.get("path") match {
-        case Some(x) => x.split(",").map(_.trim)
-        case None => sys.error("'path' must be specified.")
+        case Some(x) => {
+          val a = x.trim.split(",").map(_.trim)
+          if (a.size == 1 && a(0) == "") Array[String]() else a
+        }
+        case None => Array[String]()
+      }
+
+      if (flist == "" && paths.size == 0) {
+        sys.error("'files' or 'path' must be specified.")
       }
 
       // The HDF5 path name of a dataset
@@ -44,6 +57,7 @@ class DefaultSource extends RelationProvider {
       val recursion = parameters.getOrElse("recursion", "true").toBoolean
 
       new HDF5Relation(
+            flist,
             paths,
             dataset,
             extensions,

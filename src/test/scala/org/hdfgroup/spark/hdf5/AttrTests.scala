@@ -10,7 +10,7 @@ class AttrTests extends FunTestSuite {
 
   test("Reading sparky://attributes : root_group_attr.h5") {
 
-    val df = spark.read.hdf5(file, vrtlAttributes)
+    val df = spark.read.hdf5("", file, vrtlAttributes)
 
     assert(df.schema === makeSchema(vrtlAttributes))
 

@@ -12,24 +12,27 @@ sc.setLogLevel("ERROR")
 
 val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
-val files = "/mnt/wrk/hdftest/GSSTF_NCEP.3/"
+val flist = "./examples/flist.txt"
+//val flist = ""
 
+//val path = "/mnt/wrk/hdftest/GSSTF_NCEP.3/"
+val path = ""
 
 val df = { sqlContext.read
   .option("extension", "he5")
-  .hdf5(files, "sparky://files")
+  .hdf5(flist, path, "sparky://files")
 }
 df.count()
 
 val df = { sqlContext.read
   .option("extension", "he5")
-  .hdf5(files, "sparky://datasets")
+  .hdf5(flist, path, "sparky://datasets")
 }
 df.count()
 
 val df = { sqlContext.read
   .option("extension", "he5")
-  .hdf5(files, "sparky://attributes")
+  .hdf5(flist, path, "sparky://attributes")
 }
 df.count()
 

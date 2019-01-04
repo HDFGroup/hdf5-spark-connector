@@ -21,14 +21,17 @@ import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.hdfgroup.spark.hdf5.reader.{HDF5Reader, HDF5Schema}
 import org.slf4j.LoggerFactory
 
+import scala.io.Source
+
 class HDF5Relation(
+    val flist: String,
     val paths: Array[String],
-    val dataset: String, 
+    val dataset: String,
     val fileExtension: Array[String],
-    val chunkSize: Int, 
-    val start: Array[Long], 
+    val chunkSize: Int,
+    val start: Array[Long],
     val block: Array[Int],
-    val index: Array[Long], 
+    val index: Array[Long],
     val recursion: Boolean)
     (@transient val sqlContext: SQLContext)
     extends BaseRelation
@@ -37,19 +40,44 @@ class HDF5Relation(
 
   private val log = LoggerFactory.getLogger(getClass)
 
-  //============================================================================
+  //===========================================================================
   // Determine the HDF5 files "in-scope"
-  //============================================================================
+  //===========================================================================
 
   val hadoopConfiguration = sqlContext.sparkContext.hadoopConfiguration
   val fileSystem = FileSystem.get(hadoopConfiguration)
 
-  // Given the paths, file extensions, and recursion behavior construct
-  // an array of HDF5 file names.
+  // Helper to read the file list
+  def readFile(filename: String): Seq[String] = {
+    val bufferedSource = Source.fromFile(filename)
+    val lines = (for (line <- bufferedSource.getLines()) yield line).toList
+    bufferedSource.close
+    lines
+  }
+
+  // Given the file list, paths, file extensions, and recursion behavior
+  // construct an array of HDF5 file names (represented as URIs).
   lazy val files: Array[URI] = {
     log.trace("files: Array[URI]")
 
-    val roots = paths.map { path =>
+    // Deal with the file list
+
+    val fliststat = if (flist != "") fileSystem.getFileStatus(new Path(flist))
+                    else None
+
+    // TODO Filter the list for non-existing files
+    val flisturis = if (fliststat == None) Array[URI]()
+    else readFile(flist).map{file =>
+      fileSystem.getFileStatus(new Path(file)).getPath
+    }.filter(path =>
+      fileExtension.contains(FilenameUtils.getExtension(path.toString)))
+      .map(org.apache.hadoop.fs.Path.getPathWithoutSchemeAndAuthority(_).toUri)
+      .toArray
+
+    // Deal with the directories and files
+
+    val roots = if (paths.size == 0) Seq[FileStatus]()
+    else paths.map { path =>
       fileSystem.getFileStatus(new Path(path))
     }.toSeq
 
@@ -63,12 +91,13 @@ class HDF5Relation(
         }
         children
     }
+
     leaves.filter(status => status.isFile)
       .map(_.getPath)
       .filter(path =>
           fileExtension.contains(FilenameUtils.getExtension(path.toString)))
       .map(org.apache.hadoop.fs.Path.getPathWithoutSchemeAndAuthority(_).toUri)
-      .toArray
+      .toArray ++ flisturis
   } // files
 
   // Maps the files with arbitrary ID's starting at zero
@@ -81,9 +110,9 @@ class HDF5Relation(
 
   def getFileName(id: Integer): Option[String] = fileIDs.get(id)
 
-  //============================================================================
+  //===========================================================================
   // Collect array variables
-  //============================================================================
+  //===========================================================================
 
   // Apart from "regular" dataset path names, there are currently three
   // RESERVED dataset names:
@@ -130,7 +159,7 @@ class HDF5Relation(
       }.toArray.flatten
 
       // For "real" datasets we delegate the ArrayVar construction to a
-      // ScanExecutor. 
+      // ScanExecutor.
 
       // TODO: Explore why we couldn't do the same for the virtual tables!
 
@@ -141,9 +170,9 @@ class HDF5Relation(
     }
   }
 
-  //============================================================================
+  //===========================================================================
   // Infer the schema
-  //============================================================================
+  //===========================================================================
 
   // We assume that ALL array variables in datasets follow the same schema.
   // Infer the schema by looking at the first element.
@@ -158,9 +187,9 @@ class HDF5Relation(
 
   override def schema: StructType = SchemaConverter.convertSchema(hdf5Schema)
 
-  //============================================================================
+  //===========================================================================
   // Build the scan
-  //============================================================================
+  //===========================================================================
 
   // TableScan calls PrunedScan with an empty array signalling all columns
   // are to be returned
@@ -246,8 +275,8 @@ class HDF5Relation(
                           else
                           blockSize(1)),
                         Array[Long](
-                          (x % matrixX * blockSize(0)).toLong + startPoint(0), 
-                          (x / matrixX * blockSize(1)).toLong + startPoint(1)), 
+                          (x % matrixX * blockSize(0)).toLong + startPoint(0),
+                          (x / matrixX * blockSize(1)).toLong + startPoint(1)),
                         cols)
                       }) // map
               }
@@ -259,7 +288,7 @@ class HDF5Relation(
                       BoundedMDScan(ds,  0, blockSize,
                         Array[Long](
                           (x % matrixX * blockSize(0)).toLong + startPoint(0),
-                          (x / matrixX * blockSize(1)).toLong + startPoint(1)), 
+                          (x / matrixX * blockSize(1)).toLong + startPoint(1)),
                         cols))
               } // else
             }

@@ -12,7 +12,7 @@ class InfrastructureTests extends FunTestSuite {
   val multiDataset = "/multi"
 
   test("Reading multiple files") {
-    val df = spark.read.hdf5(h5dir, multiDataset).drop("FileID")
+    val df = spark.read.hdf5("", h5dir, multiDataset).drop("FileID")
     val expected = (0 until 30).map { x => Row(x % 10, x) }
 
     checkEqual(df, expected)
@@ -23,11 +23,11 @@ class InfrastructureTests extends FunTestSuite {
   test("Read files in chunks") {
     val evenchunkeddf = spark.read
       .option("window size", 5.toString)
-      .hdf5(h5file, int8test).drop("FileID")
+      .hdf5("", h5file, int8test).drop("FileID")
 
     val oddchunkeddf = spark.read
       .option("window size", 3.toString)
-      .hdf5(h5file, int8test).drop("FileID")
+      .hdf5("", h5file, int8test).drop("FileID")
 
     val expected = Row(0L, Byte.MinValue) +:
       (1L until 9L).map { x => Row(x, (x - 2).toByte) } :+
@@ -55,4 +55,3 @@ class InfrastructureTests extends FunTestSuite {
   }
    */
 }
-
