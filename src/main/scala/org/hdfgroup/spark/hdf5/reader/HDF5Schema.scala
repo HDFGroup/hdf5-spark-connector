@@ -10,7 +10,7 @@
 package org.hdfgroup.spark.hdf5.reader
 
 import org.apache.commons.lang.ArrayUtils
-import org.apache.spark.SparkException    
+import org.apache.spark.SparkException
 import ch.systemsx.cisd.hdf5._
 import ch.systemsx.cisd.base.mdarray._
 
