@@ -1,4 +1,4 @@
-// Copyright (C) 2017 The HDF Group
+q// Copyright (C) 2017 The HDF Group
 // All rights reserved.
 //
 //  \author Hyo-Kyung Lee (hyoklee@hdfgroup.org)
