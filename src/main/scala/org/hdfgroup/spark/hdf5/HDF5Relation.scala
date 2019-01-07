@@ -24,16 +24,16 @@ import org.slf4j.LoggerFactory
 import scala.io.Source
 
 class HDF5Relation(
-    val flist: String,
-    val paths: Array[String],
-    val dataset: String,
-    val fileExtension: Array[String],
-    val chunkSize: Int,
-    val start: Array[Long],
-    val block: Array[Int],
-    val index: Array[Long],
-    val recursion: Boolean)
-    (@transient val sqlContext: SQLContext)
+  val flist: String,
+  val paths: Array[String],
+  val dataset: String,
+  val fileExtension: Array[String],
+  val chunkSize: Int,
+  val start: Array[Long],
+  val block: Array[Int],
+  val index: Array[Long],
+  val recursion: Boolean)
+  (@transient val sqlContext: SQLContext)
     extends BaseRelation
     with TableScan
     with PrunedScan {
