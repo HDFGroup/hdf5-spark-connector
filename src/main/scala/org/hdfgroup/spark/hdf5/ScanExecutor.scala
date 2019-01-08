@@ -159,124 +159,132 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
           }
         }
 
-          // TODO Fix the broken invariant logic
-
-          // "Real" datasets
+        // "Real" scalar datasets
 
         case _ => {
           val col = if (cols.length == 0) dataSchema else cols
           val hasValue = col contains "Value"
           val hasIndex = col contains "Index"
-          val hasID = col contains "FileID"
+          val hasFileID = col contains "FileID"
+
           if (hasValue) {
             val dataReader = newDatasetReader(dataset)(_.readDataset())
             if (hasIndex) {
               val indexed = dataReader.zipWithIndex
-              if (hasID)
-                indexed.map {
-                  case (x, index) => Row(fileID, index.toLong, x)
+
+              // FIXME This does not cover the case that all three columns were
+              //       specified out of order
+              if (hasFileID)
+                indexed.map { case (x, index) => Row(fileID, index.toLong, x) }
+              else
+                col(0) match {
+                  case "Index" => indexed.map
+                    { case (x, index) => Row(index.toLong, x) }
+                  case _ => indexed.map
+                    { case (x, index) => Row(x, index.toLong) }
                 }
-                else
-                  indexed.map {
-                    case (x, index) => {
-                      if (col(0) == "Index") Row(index.toLong, x)
-                      else Row(x, index.toLong)
-                    }
-                  }
             }
             else {
-              if (hasID) dataReader.map {
-                x => {
-                  if (col(0) == "FileID") Row(fileID, x)
-                  else Row(x, fileID)
+              if (hasFileID)
+                col(0) match {
+                  case "FileID" => dataReader.map { x => Row(fileID, x) }
+                  case _ => dataReader.map { x => Row(x, fileID) }
                 }
-              }
-              else dataReader.map { x => Row(x) }
+                else dataReader.map { x => Row(x) }
             }
           }
           else {
             if (hasIndex) {
               val indexed = (0L until dataset.size)
-              if (hasID) indexed.map {
-                x => {
-                  if (col(0) == "FileID") Row(fileID, x)
-                  else Row(x, fileID)
+
+              if (hasFileID)
+                col(0) match {
+                  case "FileID" => indexed.map { x => Row(fileID, x) }
+                  case _ => indexed.map { x => Row(x, fileID) }
                 }
-              }
-              else
-                indexed.map { x => Row(x) }
+                else
+                  indexed.map { x => Row(x) }
             } else
                 Seq(Row(fileID))
           }
         }
+
+        // TODO Compound types
+
       } // case UnBoundedScan
 
-        //========================================================================
-        // BoundedScan (1D datasets)
-        //========================================================================
+      //========================================================================
+      // BoundedScan (1D datasets)
+      //========================================================================
 
       case BoundedScan(dataset, ioSize, offset, cols) => {
-        val col =
-          if (cols.length == 0) dataSchema
-          else cols
+        val col = if (cols.length == 0) dataSchema else cols
         val hasValue = col contains "Value"
         val hasIndex = col contains "Index"
-        val hasID = col contains "FileID"
+        val hasFileID = col contains "FileID"
+
         if (hasValue) {
           val dataReader = newDatasetReader(dataset)(
             _.readDataset(ioSize, offset))
+
           if (hasIndex) {
             val indexed = dataReader.zipWithIndex
-            if (hasID) indexed.map {
+
+            // FIXME This does not cover the case that all three columns were
+            //       specified out of order
+            if (hasFileID) indexed.map {
               case (x, index) => Row(fileID, offset + index.toLong, x)
             }
             else
-              indexed.map {
-                case (x, index) => {
-                  if (col(0) == "Index") Row(offset + index.toLong, x)
-                  else Row(x, offset + index.toLong)
+              col(0) match {
+                case "Index" => indexed.map {
+                  case (x, index) =>  Row(offset + index.toLong, x)
+                }
+                case _ => indexed.map {
+                  case (x, index) =>  Row(x, offset + index.toLong)
                 }
               }
           }
           else {
-            if (hasID) dataReader.map {
-              x => {
-                if (col(0) == "FileID") Row(fileID, x)
-                else Row(x, fileID)
+            if (hasFileID)
+              col(0) match {
+                case "FileID" => dataReader.map { x => Row(fileID, x) }
+                case _ => dataReader.map { x => Row(x, fileID) }
               }
-            }
-            else
-              dataReader.map { x => Row(x) }
+              else
+                dataReader.map { x => Row(x) }
           }
         }
         else {
           if (hasIndex) {
             val indexed = (0L until dataset.size)
-            if (hasID) indexed.map {
-              x => {
-                if (col(0) == "FileID") Row(fileID, offset + x.toLong)
-                else Row(offset + x.toLong, fileID)
+
+            if (hasFileID)
+              col(0) match {
+                case "FileID" => indexed.map
+                  { x => Row(fileID, offset + x.toLong) }
+                case _ => indexed.map
+                  { x => Row(offset + x.toLong, fileID) }
               }
-            }
-            else
-              indexed.map { x => Row(offset + x.toLong) }
+              else
+                indexed.map { x => Row(offset + x.toLong) }
           }
           else
             Seq(Row(fileID))
         }
       } // BoundedScan
 
-        //========================================================================
-        // BoundedMDScan (2D+ datasets)
-        //========================================================================
+      //========================================================================
+      // BoundedMDScan (2D+ datasets)
+      //========================================================================
 
       case BoundedMDScan(dataset, ioSize, blockDimensions, offset, cols) => {
-        val col =
-          if (cols.length == 0) dataSchema
-          else cols
+        val col = if (cols.length == 0) dataSchema else cols
+
         val hasValue = col contains "Value"
         val hasIndex = col contains "Index"
-        val hasID = col contains "FileID"
+        val hasFileID = col contains "FileID"
+
         val d = dataset.dimension
         val edgeBlock = (offset, blockDimensions, d).zipped.map {
           case (offset, dim, d) => {
@@ -290,48 +298,77 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
           // respect to the overall linearized matrix.
           val dataReader = newDatasetReader(dataset)(
             _.readDataset(blockDimensions, offset))
+
           if (hasIndex) {
             val indexed = dataReader.zipWithIndex
-            if (hasID) indexed.map {
+
+            // FIXME This does not cover the case that all three columns were
+            //       specified out of order
+
+            if (hasFileID) indexed.map {
               case (x, index) =>
                 Row(fileID,
                   blockFill + (index - index % edgeBlock(1)) /
                     edgeBlock(0) * d(1) + index % edgeBlock(1) + offset(1), x)
             }
             else {
-              indexed.map {
-                case (x, index) => {
-                  val globalIndex = blockFill +
-                  (index - index % edgeBlock(1)) / edgeBlock(1) * d(1)
-                  + index % edgeBlock(1) + offset(1)
-                  if (col(0) == "Index") Row(globalIndex, x)
-                  else Row(x, globalIndex)
-                }
+              col(0) match {
+                case "Index" => indexed.map
+                  {
+                    case (x, index) =>
+                    {
+                      val globalIndex = blockFill +
+                      (index - index % edgeBlock(1)) / edgeBlock(1) * d(1)
+                      + index % edgeBlock(1) + offset(1)
+                      Row(globalIndex, x)
+                    }
+                  }
+                case _ => indexed.map
+                  {
+                    case (x, index) =>
+                    {
+                      val globalIndex = blockFill +
+                      (index - index % edgeBlock(1)) / edgeBlock(1) * d(1)
+                      + index % edgeBlock(1) + offset(1)
+                      Row(x, globalIndex)
+                    }
+                  }
               }
             }
           }
           else {
-            if (hasID) dataReader.map {
-              x => {
-                if (col(0) == "FileID") Row(fileID, x)
-                else Row(x, fileID)
+            if (hasFileID)
+              col(0) match {
+                case "FileID" => dataReader.map { x => Row(fileID, x) }
+                case _ => dataReader.map { x => Row(x, fileID) }
               }
-            }
-            else dataReader.map { x => Row(x) }
+              else dataReader.map { x => Row(x) }
           }
         }
         else {
           if (hasIndex) {
             val indexed = (0L until edgeBlock(0) * edgeBlock(1).toLong)
-            if (hasID) indexed.map {
-              x => {
-                val globalIndex = blockFill +
-                (x - x % edgeBlock(1)) / edgeBlock(1) * d(1) +
-                x % edgeBlock(1) + offset(1)
-                if (col(0) == "FileID") Row(fileID, globalIndex)
-                else Row(globalIndex, fileID)
+            if (hasFileID)
+              col(0) match {
+                case "FileID" => indexed.map
+                  {
+                    x => {
+                      val globalIndex = blockFill +
+                      (x - x % edgeBlock(1)) / edgeBlock(1) * d(1) +
+                      x % edgeBlock(1) + offset(1)
+                      Row(fileID, globalIndex)
+                    }
+                  }
+                case _ => indexed.map
+                  {
+                    x => {
+                      val globalIndex = blockFill +
+                      (x - x % edgeBlock(1)) / edgeBlock(1) * d(1) +
+                      x % edgeBlock(1) + offset(1)
+                      Row(globalIndex, fileID)
+                    }
+                  }
               }
-            }
             else {
               indexed.map {
                 x => Row(blockFill +
@@ -345,9 +382,9 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
         }
       } // BoundedMDScan
 
-        //========================================================================
-        // SlicedMDScan
-        //========================================================================
+      //========================================================================
+      // SlicedMDScan
+      //========================================================================
 
       case SlicedMDScan(
         dataset,
