@@ -113,49 +113,45 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
         }
 
         case "sparky://datasets" => {
-          val typeInfo = dataset.contains.toString
-          if (cols.length == 0)
-            Seq(Row(dataset.fileID,
-              dataset.realPath,
-              typeInfo.substring(0, typeInfo.indexOf('(')),
-              dataset.dimension,
-              dataset.realSize))
-          else {
-            Seq(Row.fromSeq(for (col <- cols) yield {
-              col match {
-                case "FileID" => dataset.fileID
-                case "DatasetPath" => dataset.realPath
-                case "ElementType" =>
-                  typeInfo.substring(0, typeInfo.indexOf('('))
-                case "Dimensions" => dataset.dimension
-                case "ElementCount" => dataset.realSize
-              }
-            }))
+          val reader = new HDF5Reader(new File(dataset.fileName), dataset.fileID)
+          val nodes = reader.nodes.flatten()
+          reader.close()
+
+          nodes.collect {
+            case d: ArrayVar[_] =>
+              val typeInfo = dataset.contains.toString
+              Row.fromSeq(for (col <- cols) yield {
+                col match {
+                  case "FileID" => d.fileID
+                  case "DatasetPath" => d.realPath
+                  case "ElementType" =>
+                    typeInfo.substring(0, typeInfo.indexOf('('))
+                  case "Dimensions" => d.dimension
+                  case "ElementCount" => d.size
+                }
+              })
           }
         }
 
         case "sparky://attributes" => {
-          val typeInfo = dataset.contains.toString
-          if (cols.length == 0)
-            Seq(Row(dataset.fileID,
-              dataset.realPath,
-              dataset.attribute,
-              typeInfo.substring(0, typeInfo.indexOf('(')),
-              dataset.dimension,
-              dataset.value))
-          else {
-            val typeInfo = dataset.contains.toString
-            Seq(Row.fromSeq(for (col <- cols) yield {
-              col match {
-                case "FileID" => dataset.fileID
-                case "ObjectPath" => dataset.realPath
-                case "AttributeName" => dataset.attribute
-                case "ElementType" =>
-                  typeInfo.substring(0, typeInfo.indexOf('('))
-                case "Dimensions" => dataset.dimension
-                case "Value" => dataset.value
-              }
-            }))
+          val reader = new HDF5Reader(new File(dataset.fileName), dataset.fileID)
+          val nodes = reader.attributes.flatten()
+          reader.close()
+
+          nodes.collect {
+            case d: ArrayVar[_] =>
+              val typeInfo = dataset.contains.toString
+              Row.fromSeq(for (col <- cols) yield {
+                col match {
+                  case "FileID" => d.fileID
+                  case "ObjectPath" => d.realPath
+                  case "AttributeName" => d.attribute
+                  case "ElementType" =>
+                    typeInfo.substring(0, typeInfo.indexOf('('))
+                  case "Dimensions" => d.dimension
+                  case "Value" => d.value
+                }
+              })
           }
         }
 

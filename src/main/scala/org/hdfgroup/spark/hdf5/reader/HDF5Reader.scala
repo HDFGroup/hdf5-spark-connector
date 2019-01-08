@@ -34,47 +34,16 @@ class HDF5Reader(val input: File, val id: Integer) extends Closeable
   def getDataset[S, T](dataset: ArrayVar[T])(fun: DatasetReader[T] => S):
       S = fun(new DatasetReader[T](reader, dataset))
 
-  // TODO Check if we can push down the dataset and attribute traversals
-  //      into the scans (for parallelism)
-
   // Returns an ArrayVar if the specified dataset exists
   def getDataset1(dataset: String): Option[HDF5Node] = {
     log.trace("{}", Array[AnyRef](dataset))
 
     dataset match {
-      case "sparky://files" =>
+      case "sparky://files" | "sparky://datasets" | "sparky://attributes" =>
         Option(
           ArrayVar(input.toString, id, dataset, HDF5Schema.FLString(id, dataset),
             Array(1), 1, input.toString, input.length, input.toString, ""))
-      case "sparky://datasets" =>
-        Option(
-          Catalog(id, input.toString,
-            {
-              val reader = new HDF5Reader(input, id)
-              val nodes = reader.nodes.flatten()
-              reader.close()
-              nodes.collect{
-                case y: ArrayVar[_] => new ArrayVar(input.toString, id, dataset,
-                  y.contains, y.dimension, 1, y.path, y.size, null, "")
-              }
-            }
-          )
-        )
-      case "sparky://attributes" =>
-        Option(
-          Catalog(id, input.toString,
-            {
-              val reader = new HDF5Reader(input, id)
-              val nodes = reader.attributes.flatten()
-              reader.close()
-              nodes.collect{
-                case y: ArrayVar[_] => new ArrayVar(input.toString, id, dataset,
-                  y.contains, y.dimension, 1, y.path, y.size, y.attribute,
-                  y.value)
-              }
-            }
-          )
-        )
+
       case _ =>
         if (reader.exists(dataset)) {
           val node = reader.getDataSetInformation(dataset)
