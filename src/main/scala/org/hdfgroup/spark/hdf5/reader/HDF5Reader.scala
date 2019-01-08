@@ -48,7 +48,7 @@ class HDF5Reader(val input: File, val id: Integer) extends Closeable
             Array(1), 1, input.toString, input.length, input.toString, ""))
       case "sparky://datasets" =>
         Option(
-          Aggregate(id, input.toString,
+          Catalog(id, input.toString,
             {
               val reader = new HDF5Reader(input, id)
               val nodes = reader.nodes.flatten()
@@ -62,7 +62,7 @@ class HDF5Reader(val input: File, val id: Integer) extends Closeable
         )
       case "sparky://attributes" =>
         Option(
-          Aggregate(id, input.toString,
+          Catalog(id, input.toString,
             {
               val reader = new HDF5Reader(input, id)
               val nodes = reader.attributes.flatten()

@@ -53,7 +53,7 @@ object HDF5Schema {
     def flatten(): Seq[HDF5Node] = this +: children.flatMap(x => x.flatten())
   }
 
-  case class Aggregate(
+  case class Catalog(
     fileID: Integer,
     path: String,
     children: Seq[HDF5Node])
