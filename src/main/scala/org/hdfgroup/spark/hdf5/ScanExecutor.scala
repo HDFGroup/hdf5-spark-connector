@@ -177,11 +177,12 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
               if (hasFileID)
                 indexed.map { case (x, index) => Row(fileID, index.toLong, x) }
               else
-                col(0) match {
-                  case "Index" => indexed.map
-                    { case (x, index) => Row(index.toLong, x) }
-                  case _ => indexed.map
-                    { case (x, index) => Row(x, index.toLong) }
+                indexed.map {
+                  case (x, index) =>
+                    col(0) match {
+                      case "Index" => Row(index.toLong, x)
+                      case _ => Row(x, index.toLong)
+                    }
                 }
             }
             else {
@@ -236,20 +237,21 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
               case (x, index) => Row(fileID, offset + index.toLong, x)
             }
             else
-              col(0) match {
-                case "Index" => indexed.map {
-                  case (x, index) =>  Row(offset + index.toLong, x)
-                }
-                case _ => indexed.map {
-                  case (x, index) =>  Row(x, offset + index.toLong)
-                }
+              indexed.map {
+                case (x, index) =>
+                  col(0) match {
+                    case "Index" => Row(offset + index.toLong, x)
+                    case _ => Row(x, offset + index.toLong)
+                  }
               }
           }
           else {
             if (hasFileID)
-              col(0) match {
-                case "FileID" => dataReader.map { x => Row(fileID, x) }
-                case _ => dataReader.map { x => Row(x, fileID) }
+              dataReader.map {
+                x => col(0) match {
+                  case "FileID" => Row(fileID, x)
+                  case _ => Row(x, fileID)
+                }
               }
               else
                 dataReader.map { x => Row(x) }
@@ -260,11 +262,11 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
             val indexed = (0L until dataset.size)
 
             if (hasFileID)
-              col(0) match {
-                case "FileID" => indexed.map
-                  { x => Row(fileID, offset + x.toLong) }
-                case _ => indexed.map
-                  { x => Row(offset + x.toLong, fileID) }
+              indexed.map {
+                x => col(0) match {
+                  case "FileID" => Row(fileID, offset + x.toLong)
+                  case _ => Row(offset + x.toLong, fileID)
+                }
               }
               else
                 indexed.map { x => Row(offset + x.toLong) }
@@ -312,35 +314,26 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
                     edgeBlock(0) * d(1) + index % edgeBlock(1) + offset(1), x)
             }
             else {
-              col(0) match {
-                case "Index" => indexed.map
-                  {
-                    case (x, index) =>
-                    {
-                      val globalIndex = blockFill +
-                      (index - index % edgeBlock(1)) / edgeBlock(1) * d(1)
-                      + index % edgeBlock(1) + offset(1)
-                      Row(globalIndex, x)
-                    }
+              indexed.map {
+                case (x, index) => {
+                  val globalIndex = blockFill +
+                  (index - index % edgeBlock(1)) / edgeBlock(1) * d(1)
+                  + index % edgeBlock(1) + offset(1)
+                  col(0) match {
+                    case "Index" => Row(globalIndex, x)
+                    case _ => Row(x, globalIndex)
                   }
-                case _ => indexed.map
-                  {
-                    case (x, index) =>
-                    {
-                      val globalIndex = blockFill +
-                      (index - index % edgeBlock(1)) / edgeBlock(1) * d(1)
-                      + index % edgeBlock(1) + offset(1)
-                      Row(x, globalIndex)
-                    }
-                  }
+                }
               }
             }
           }
           else {
             if (hasFileID)
-              col(0) match {
-                case "FileID" => dataReader.map { x => Row(fileID, x) }
-                case _ => dataReader.map { x => Row(x, fileID) }
+              dataReader.map {
+                x => col(0) match {
+                  case "FileID" => Row(fileID, x)
+                  case _ => Row(x, fileID)
+                }
               }
               else dataReader.map { x => Row(x) }
           }
@@ -349,25 +342,16 @@ class ScanExecutor(filePath: String, fileID: Integer) extends Serializable {
           if (hasIndex) {
             val indexed = (0L until edgeBlock(0) * edgeBlock(1).toLong)
             if (hasFileID)
-              col(0) match {
-                case "FileID" => indexed.map
-                  {
-                    x => {
-                      val globalIndex = blockFill +
-                      (x - x % edgeBlock(1)) / edgeBlock(1) * d(1) +
-                      x % edgeBlock(1) + offset(1)
-                      Row(fileID, globalIndex)
-                    }
+              indexed.map {
+                x => {
+                  val globalIndex = blockFill +
+                  (x - x % edgeBlock(1)) / edgeBlock(1) * d(1) +
+                  x % edgeBlock(1) + offset(1)
+                  col(0) match {
+                    case "FileID" => Row(fileID, globalIndex)
+                    case _ => Row(globalIndex, fileID)
                   }
-                case _ => indexed.map
-                  {
-                    x => {
-                      val globalIndex = blockFill +
-                      (x - x % edgeBlock(1)) / edgeBlock(1) * d(1) +
-                      x % edgeBlock(1) + offset(1)
-                      Row(globalIndex, fileID)
-                    }
-                  }
+                }
               }
             else {
               indexed.map {
