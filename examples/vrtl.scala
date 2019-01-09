@@ -12,6 +12,7 @@ sc.setLogLevel("ERROR")
 
 val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
+//val flist = "./examples/flist.small.txt"
 val flist = "./examples/flist.txt"
 //val flist = ""
 

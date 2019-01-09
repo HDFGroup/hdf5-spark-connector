@@ -1,8 +1,7 @@
 #!/usr/bin/bash
 
-HDF5_JAVA_JAR=$HOME/.local/lib/jarhdf5-1.10.4-snap0.jar
-JHDF5_JARS=lib/jhdf5.jar,lib/sis-base.jar
-SPARKY_JAR=target/scala-2.11/5parky_2.11-0.0.1-ALPHA.jar
+JHDF5_JARS=lib/sis-jhdf5-18.09.0-pre1.jar,lib/sis-base-18.08.0.jar
+SPARKY_JAR=target/scala-2.11/5parky_2.11-0.0.3-BETA.jar
 
 JARS=$SPARKY_JAR,$JHDF5_JARS,$HDF5_JAVA_JAR
 
