@@ -118,14 +118,6 @@ class HDF5Relation(
   // Collect array variables
   //===========================================================================
 
-  // Apart from "regular" dataset path names, there are currently three
-  // RESERVED dataset names:
-  //   - sparky://files
-  //   - sparky://datasets
-  //   - sparky://attributes
-  // The associated virtual tables are populated with the appropiate
-  // metadata.
-
   private lazy val datasets: Array[ArrayVar[_]] = {
     log.trace("datasets: Array[ArrayVar[_]]")
 
@@ -173,7 +165,7 @@ class HDF5Relation(
   override def buildScan(requiredColumns: Array[String]): RDD[Row] = {
     log.trace("buildScan(): RDD[Row]")
 
-    // TODO: This needs to be refactored.
+    // TODO: This needs to be refactored!!!
 
     val hasStart = start(0) != -1
     val hasBlock = block(0) != -1

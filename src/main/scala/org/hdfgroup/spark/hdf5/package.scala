@@ -7,6 +7,8 @@ package object hdf5 {
   // Adds a method, `hdf5`, to DataFrameReader
   implicit class HDF5DataFrameReader(reader: DataFrameReader) {
 
+    // TODO Choose better option names
+
     def hdf5(flist: String, path: String, dataset: String): DataFrame =
       reader.format("org.hdfgroup.spark.hdf5")
         .option("files", flist)

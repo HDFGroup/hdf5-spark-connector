@@ -62,6 +62,9 @@ class DefaultSource extends RelationProvider {
     val stride = parameters.getOrElse("stride", "-1").split(",").map(_.toInt)
     val count = parameters.getOrElse("count", "-1").split(",").map(_.toInt)
 
+
+    // TODO clarify the meaning of 'index'
+
     // Block index (???)
     val index = parameters.getOrElse("index", "-1").split(",").map(_.toLong)
 
