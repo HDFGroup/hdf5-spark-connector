@@ -12,14 +12,14 @@
 package org.hdfgroup.spark.hdf5.reader
 
 import java.io.{Closeable, File}
-import ch.systemsx.cisd.hdf5.{HDF5DataClass, HDF5DataTypeInformation,HDF5FactoryProvider}
-import ch.systemsx.cisd.hdf5.IHDF5StringReader
+import ch.systemsx.cisd.hdf5.{HDF5DataClass, HDF5DataTypeInformation}
+import ch.systemsx.cisd.hdf5.{HDF5FactoryProvider, IHDF5StringReader}
 import org.hdfgroup.spark.hdf5.reader.HDF5Schema._
 import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters._
 
 class HDF5Reader(val input: File, val id: Integer) extends Closeable
-with Serializable {
+    with Serializable {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -32,30 +32,38 @@ with Serializable {
   override def close(): Unit = reader.close()
 
   def getDataset[S, T](dataset: ArrayVar[T])(fun: DatasetReader[T] => S):
-    S = fun(new DatasetReader[T](reader, dataset))
+      S = fun(new DatasetReader[T](reader, dataset))
 
   // Returns an ArrayVar if the specified dataset exists
   def getDataset1(dataset: String): Option[HDF5Node] = {
     log.trace("{}", Array[AnyRef](dataset))
 
-    if (reader.exists(dataset)) {
-      val node = reader.getDataSetInformation(dataset)
-      val hdfType = infoToType(dataset, node.getTypeInformation)
-      Option(
-          ArrayVar(
-            input.toString,
-            id,
-            dataset,
-            hdfType,
-            node.getDimensions,
-            node.getNumberOfElements,
-            dataset,
-            1,
-            dataset,
-            ""))
-    }
-    else {
-      None
+    dataset match {
+      case "sparky://files" | "sparky://datasets" | "sparky://attributes" =>
+        Option(
+          ArrayVar(input.toString, id, dataset, HDF5Schema.FLString(id, dataset),
+            Array(1), 1, input.toString, input.length, input.toString, ""))
+
+      case _ =>
+        if (reader.exists(dataset)) {
+          val node = reader.getDataSetInformation(dataset)
+          val hdfType = infoToType(dataset, node.getTypeInformation)
+          Option(
+            ArrayVar(
+              input.toString,
+              id,
+              dataset,
+              hdfType,
+              node.getDimensions,
+              node.getNumberOfElements,
+              dataset,
+              1,
+              dataset,
+              ""))
+        }
+        else {
+          None
+        }
     }
   }
 
@@ -68,28 +76,28 @@ with Serializable {
         name match {
           case "/" =>
             Group(
-                null,
-                name,
-                children.map { x => listMembers("/" + x) })
+              null,
+              name,
+              children.map { x => listMembers("/" + x) })
           case _ =>
             Group(
-                null, name, children.map { x => listMembers(name + "/" + x) })
+              null, name, children.map { x => listMembers(name + "/" + x) })
         }
       case false =>
         val info = reader.getDataSetInformation(name)
         try {
           val hdfType = infoToType(name, info.getTypeInformation)
           ArrayVar(
-              input.toString,
-              id,
-              name,
-              hdfType,
-              info.getDimensions,
-              info.getNumberOfElements,
-              name,
-              1,
-              name,
-              "")
+            input.toString,
+            id,
+            name,
+            hdfType,
+            info.getDimensions,
+            info.getNumberOfElements,
+            name,
+            1,
+            name,
+            "")
         } catch {
           case _: Throwable =>
             log.warn("Unsupported datatype found (listMembers)")
@@ -112,7 +120,7 @@ with Serializable {
         // println(attr)
         ArrayVar(input.toString, id, name, hdfType,
           info.getDimensions.map { y => y.toLong },
-                 info.getNumberOfElements, name, 1, x, attr)
+          info.getNumberOfElements, name, 1, x, attr)
       } catch {
         case _: Throwable =>
           log.warn("Unsupported datatype found (listAttributes)")
@@ -154,9 +162,9 @@ with Serializable {
   }
 
   def getAttributeValueAsString(
-      name: String,
-      x: String,
-      hdfType: HDF5Type[_]): String = {
+    name: String,
+    x: String,
+    hdfType: HDF5Type[_]): String = {
     var attr = ""
     // println("getAttributeValueAsString()="+name+":"+x)
     val info = reader.`object`().getAttributeInformation(name, x)

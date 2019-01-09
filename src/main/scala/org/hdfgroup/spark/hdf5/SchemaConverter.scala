@@ -37,15 +37,20 @@ object SchemaConverter {
           StructField("AttributeName", StringType, false),
           StructField("ElementType", StringType, false),
           StructField("Dimensions", ArrayType(LongType), false),
-          StructField("Value", StringType, false)          
+          StructField("Value", StringType, false)
         ))
       }
       case _ => {
+
+        // TODO Expand this to support compounds of scalars
+        //      Add a column per (supported) field
+
         val columns = StructType(Array(
           StructField("FileID", IntegerType, false),
           StructField("Index", LongType, false)
         ))
-        StructType(columns :+ StructField("Value", extractTypes(dataset.contains), false))
+        StructType(columns :+ StructField("Value",
+          extractTypes(dataset.contains), false))
         /* For now we linearize everything
         val columns = dataset.dimension.indices.map {
         index => "index" + index

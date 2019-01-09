@@ -11,7 +11,7 @@ class LinearizationTests extends FunTestSuite {
   val twodimtest = "/dimensionality/2dim"
 
   test("Reading linearized 2D array") {
-    val df = spark.read.hdf5(twodimfile, twodimtest)
+    val df = spark.read.hdf5("", twodimfile, twodimtest)
 
     assert(df.schema === makeSchema(IntegerType))
 
@@ -23,7 +23,7 @@ class LinearizationTests extends FunTestSuite {
   val ssttest = "/HDFEOS/GRIDS/NCEP/Data Fields/SST"
 
   test("Reading linearized 2D array : check row count") {
-    val df = spark.read.hdf5(gfile, ssttest)
+    val df = spark.read.hdf5("", gfile, ssttest)
 
     assert(df.schema === makeSchema(FloatType))
 
@@ -33,7 +33,7 @@ class LinearizationTests extends FunTestSuite {
   }
 
   test("Reading linearized 2D array : check distinct row index count") {
-    val df = spark.read.hdf5(gfile, ssttest)
+    val df = spark.read.hdf5("", gfile, ssttest)
 
     assert(df.schema === makeSchema(FloatType))
 
@@ -43,7 +43,7 @@ class LinearizationTests extends FunTestSuite {
   }
 
   test("Reading linearized 2D array : check minimum row index") {
-    val df = spark.read.hdf5(gfile, ssttest)
+    val df = spark.read.hdf5("", gfile, ssttest)
 
     assert(df.schema === makeSchema(FloatType))
 
@@ -53,7 +53,7 @@ class LinearizationTests extends FunTestSuite {
   }
 
   test("Reading linearized 2D array : check maximum row index") {
-    val df = spark.read.hdf5(gfile, ssttest)
+    val df = spark.read.hdf5("", gfile, ssttest)
 
     assert(df.schema === makeSchema(FloatType))
 
@@ -63,7 +63,7 @@ class LinearizationTests extends FunTestSuite {
   }
 
   test("Reading linearized 2D array : check minimum value") {
-    val df = spark.read.hdf5(gfile, ssttest)
+    val df = spark.read.hdf5("", gfile, ssttest)
 
     assert(df.schema === makeSchema(FloatType))
 

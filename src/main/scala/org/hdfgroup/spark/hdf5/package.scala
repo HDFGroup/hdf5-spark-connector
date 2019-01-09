@@ -7,10 +7,13 @@ package object hdf5 {
   // Adds a method, `hdf5`, to DataFrameReader
   implicit class HDF5DataFrameReader(reader: DataFrameReader) {
 
-    def hdf5(file: String, dataset: String): DataFrame =
+    // TODO Choose better option names
+
+    def hdf5(flist: String, path: String, dataset: String): DataFrame =
       reader.format("org.hdfgroup.spark.hdf5")
-        .option("file path", file)
+        .option("files", flist)
+        .option("path", path)
         .option("dataset", dataset)
-        .load(file)
+        .load()
   }
 }

@@ -13,15 +13,15 @@ package org.hdfgroup.spark.hdf5
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 import org.scalatest.Assertions._
-    
+
 class HyperslabTests extends FunTestSuite {
 
   val h5file = getClass.getResource("test1.h5").toString
   val int8test = "/datatypes/int8"
-  
+
   test("Testing 1d hyperslab") {
     val df = spark.read.option("window size", "2").option("block", "3").
-      option("start", "2").hdf5(h5file, int8test)
+      option("start", "2").hdf5("", h5file, int8test)
 
     assert(df.schema === makeSchema(ByteType))
 
@@ -35,7 +35,7 @@ class HyperslabTests extends FunTestSuite {
 
   test("Testing 2d hyperslab") {
     val df = spark.read.option("window size", "5").option("block", "3,3").
-      option("start", "2,2").hdf5(gfile, ssttest)
+      option("start", "2,2").hdf5("", gfile, ssttest)
 
     assert(df.schema === makeSchema(FloatType))
 
@@ -46,13 +46,13 @@ class HyperslabTests extends FunTestSuite {
   }
 
   val mdtest = "/dimensionality/3dim"
-  
+
   test("Testing 3d hyperslab") {
     val df = spark.read.option("window size", "10")
     .option("block", "2,2")
     .option("start", "0,0")
     .option("index", "-1,-1,0")
-    .hdf5(h5file, mdtest)
+    .hdf5("", h5file, mdtest)
 
     assert(df.schema === makeSchema(IntegerType))
     val len = df.drop("FileID").drop("Value").collect

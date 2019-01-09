@@ -10,7 +10,7 @@ class VRTLTests extends FunTestSuite {
    getClass.getResource("test1.h5").getPath)
 
   test("Reading sparky://files : single file") {
-    val df = spark.read.hdf5(h5dir, vrtlFiles)
+    val df = spark.read.hdf5("", h5dir, vrtlFiles)
 
     assert(df.schema === makeSchema(vrtlFiles))
 
@@ -21,7 +21,7 @@ class VRTLTests extends FunTestSuite {
   }
 
   test("Reading sparky://files : multiple files") {
-    val df = spark.read.hdf5(h5dir, vrtlFiles)
+    val df = spark.read.hdf5("", h5dir, vrtlFiles)
 
     assert(df.schema === makeSchema(vrtlFiles))
 
@@ -31,7 +31,7 @@ class VRTLTests extends FunTestSuite {
   }
 
   test("Reading sparky://datasets : single file") {
-    val df = spark.read.hdf5(h5dir, vrtlDatasets)
+    val df = spark.read.hdf5("", h5dir, vrtlDatasets)
 
     assert(df.schema === makeSchema(vrtlDatasets))
 
@@ -41,7 +41,7 @@ class VRTLTests extends FunTestSuite {
   }
 
   test("Reading sparky://datasets : multiple files") {
-    val df = spark.read.hdf5(h5dir, vrtlDatasets)
+    val df = spark.read.hdf5("", h5dir, vrtlDatasets)
 
     assert(df.schema === makeSchema(vrtlDatasets))
 
@@ -59,7 +59,7 @@ class VRTLTests extends FunTestSuite {
   }
 
   test("Reading sparky://attributes : single file") {
-    val df = spark.read.hdf5(h5dir, vrtlAttributes)
+    val df = spark.read.hdf5("", h5dir, vrtlAttributes)
 
     assert(df.schema === makeSchema(vrtlAttributes))
 
@@ -70,7 +70,7 @@ class VRTLTests extends FunTestSuite {
   }
 
   test("Reading sparky://attributes : multiple files") {
-    val df = spark.read.hdf5(h5dir, vrtlAttributes)
+    val df = spark.read.hdf5("", h5dir, vrtlAttributes)
 
     assert(df.schema === makeSchema(vrtlAttributes))
 

@@ -4,15 +4,15 @@ import org.hdfgroup.spark.hdf5._
 
 sc.setLogLevel("ERROR")
 
-val dirName = "/mnt/wrk/hdftest/GSSTF_NCEP.3/2000"
+val flist = "examples/flist.2000.txt"
 val varName = "/HDFEOS/GRIDS/NCEP/Data Fields/Tair_2m"
 
 val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
 val df = { sqlContext.read
   .option("extension", "he5")
-  . option("window size", "200000")
-  .hdf5(dirName, varName)
+  .option("window size", "200000")
+  .hdf5(flist, "", varName)
 }
 df.count()
 
